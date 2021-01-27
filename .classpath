@@ -2,18 +2,18 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/google-collections-1.0-rc2.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/stax-utils-20070216.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/apolloopendrivexml.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/jts-core-1.17.1.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/jackson-databind-2.9.9.3.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/jackson-core-2.9.9.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/proj4j-0.1.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/google-collections-1.0-rc2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/stax-utils-20070216.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/apolloopendrivexml.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/jts-core-1.17.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/jackson-databind-2.9.9.3.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/jackson-core-2.9.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/proj4j-0.1.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/josm/core/dist/josm-custom.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/jaxb-core-2.3.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/jaxb-impl-2.3.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/jaxb-xjc-2.3.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/lucene-core-8.7.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/lucene-spatial-8.4.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/jaxb-core-2.3.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/jaxb-impl-2.3.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/jaxb-xjc-2.3.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/lucene-core-8.7.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hayuki/OneDrive/Masterarbeit/Tools/converter/apolloconverter/dependencies/lucene-spatial-8.4.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
