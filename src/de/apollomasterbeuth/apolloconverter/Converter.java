@@ -30,6 +30,8 @@ import org.openstreetmap.josm.plugins.apolloopendrive.xml.Link;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Link.Predecessor;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Link.Successor;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE;
+import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE.Junction;
+import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE.Junction.Connection;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE.Road;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE.Road.Lanes;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE.Road.Lanes.LaneSection;
@@ -43,6 +45,7 @@ import org.openstreetmap.josm.plugins.apolloopendrive.xml.OpenDRIVE.Road.Signals
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Outline.CornerGlobal;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Outline;
 
+import de.apollomasterbeuth.apolloconverter.osm.Way;
 import de.apollomasterbeuth.apolloconverter.structure.Environment;
 import de.apollomasterbeuth.logger.Log;
 
@@ -215,7 +218,6 @@ public class Converter {
 					
 					odLaneSection.getBoundaries().add(odBoundaries);
 					
-					
 					odLanes.getLaneSection().add(odLaneSection);
 				});
 				
@@ -242,6 +244,31 @@ public class Converter {
 				odRoad.setId(road.id);
 				openDriveRoot.getLinkOrGeometryOrOutline().add(odRoad);
 			});
+			
+			env.junctions.forEach(junction->{
+				Junction odJunction = new Junction();
+				Outline odOutline = new Outline();
+				odJunction.setId(Long.toString(junction.nodeLinks.id));
+				junction.outline.forEach(outline->{
+					CornerGlobal odCornerGlobal = new CornerGlobal();
+					odCornerGlobal.setX(Double.toString(outline.getY()));
+					odCornerGlobal.setY(Double.toString(outline.getX()));
+					odOutline.getCornerGlobal().add(odCornerGlobal);
+				});
+				int idCounter = 0;
+				for (Map.Entry<Boolean, List<Way>> entry : junction.nodeLinks.links.entrySet()) {
+					for (Way way : entry.getValue()) {
+						Connection odConnection = new Connection();
+						odConnection.setId(Integer.toString(idCounter));
+						idCounter++;
+						//TODO: Connection and Lane Links
+						odJunction.getConnection().add(odConnection);
+					}
+				}
+				odJunction.getOutline().add(odOutline);
+				openDriveRoot.getLinkOrGeometryOrOutline().add(odJunction);
+			});
+			
 			log.log(outputPath);
 			OutputStream os = new FileOutputStream(outputPath);
 			

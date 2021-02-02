@@ -10,4 +10,9 @@ public class NodeLinks {
 	
 	//true = start, false = end
 	public HashMap<Boolean, List<Way>> links = new HashMap<Boolean, List<Way>>();
+	
+	public NodeLinks(long id, Node node) {
+		this.id = id;
+		this.node = node;
+	}
 }

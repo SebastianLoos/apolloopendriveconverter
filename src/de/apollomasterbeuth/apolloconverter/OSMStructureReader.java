@@ -39,7 +39,7 @@ import de.uzl.itm.jaxb4osm.tools.OsmUnmarshaller;
 public class OSMStructureReader {
 	public static final String[] highwayTags = {"primary","secondary","tertiary","residential","service","unclassified"};
 	
-	private static Log log = new Log();
+	private static Log log = new Log(OSMStructureReader.class.getName());
 	
 	public static Environment read(List<org.openstreetmap.josm.data.osm.Node> nodes, List<org.openstreetmap.josm.data.osm.Way> ways) 
 	{
@@ -120,9 +120,7 @@ public class OSMStructureReader {
 				if (i==0) {
 					Optional<NodeLinks> nodeLinksMatch = nodeLinks.stream().filter(x -> x.id == currentId).findFirst();
 					if (!nodeLinksMatch.isPresent()) {
-						NodeLinks nodeLinksTemp = new NodeLinks();
-						
-						nodeLinksTemp.id = node.id;
+						NodeLinks nodeLinksTemp = new NodeLinks(node.id, node);
 						List<Way> wayList = new ArrayList<Way>();
 						wayList.add(way);
 						nodeLinksTemp.links.put(true, wayList);
@@ -144,9 +142,7 @@ public class OSMStructureReader {
 				if (i==way.nodeIDs.length-1) {
 					Optional<NodeLinks> nodeLinksMatch = nodeLinks.stream().filter(x -> x.id == currentId).findFirst();
 					if (!nodeLinksMatch.isPresent()) {
-						NodeLinks nodeLinksTemp = new NodeLinks();
-						
-						nodeLinksTemp.id = node.getId();
+						NodeLinks nodeLinksTemp = new NodeLinks(node.id, node);
 						nodeLinksTemp.links = new HashMap<Boolean, List<Way>>();
 						List<Way> wayList = new ArrayList<Way>();
 						wayList.add(way);
@@ -200,9 +196,7 @@ public class OSMStructureReader {
 								nodeLinksTemp.links.put(false, wayList);
 							}
 						} else {
-							nodeLinksTemp = new NodeLinks();
-							nodeLinksTemp.id = wayNode.id;
-							nodeLinksTemp.node = wayNode;
+							nodeLinksTemp = new NodeLinks(wayNode.id, wayNode);
 							List<Way> wayList = new ArrayList<Way>();
 							wayList.add(way);
 							nodeLinksTemp.links.put(true, wayList);
@@ -249,7 +243,8 @@ public class OSMStructureReader {
 			}
 		}
 		
-		environment.junctions = getJunctions(nodeLinks, 0.001);
+		environment.junctions = getJunctions(nodeLinks, 0.0001);
+		log.log("Junctions: " + environment.junctions.size());
 		
 		roadWays.forEach(way->{			
 			Road road = new Road();
@@ -337,8 +332,7 @@ public class OSMStructureReader {
 	
 	private static List<Junction> getJunctions(List<NodeLinks> nodeLinks, double junctionAreaSize){
 		List<Junction> junctions = new ArrayList<Junction>();
-		
-		nodeLinks.forEach(nodeLink->{
+		nodeLinks.stream().filter(x->x.links.entrySet().stream().map(y->y.getValue().size()).reduce(0, (a, b) -> a+b) > 1).forEach(nodeLink->{
 			Junction junction = new Junction();
 			junction.nodeLinks = nodeLink;
 			Point center = nodeLink.node.geometry;
@@ -346,6 +340,7 @@ public class OSMStructureReader {
 			Arrays.stream(center.buffer(junctionAreaSize, 1).getCoordinates()).map(x->new GeometryFactory().createPoint(x)).collect(Collectors.toList()).forEach(point->{
 				junction.outline.add(point);
 			});
+			junctions.add(junction);
 		});
 		
 		return junctions;
