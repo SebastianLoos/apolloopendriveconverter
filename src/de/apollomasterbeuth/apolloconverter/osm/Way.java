@@ -13,8 +13,8 @@ public class Way {
 	public String type;
 	public long id;
 	
-	public NodeLinks start;
-	public NodeLinks end;
+	public WayNode start;
+	public WayNode end;
 	
 	public boolean oneway;
 	

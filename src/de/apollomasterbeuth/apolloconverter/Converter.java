@@ -248,7 +248,7 @@ public class Converter {
 			env.junctions.forEach(junction->{
 				Junction odJunction = new Junction();
 				Outline odOutline = new Outline();
-				odJunction.setId(Long.toString(junction.nodeLinks.id));
+				odJunction.setId(Long.toString(junction.node.id));
 				junction.outline.forEach(outline->{
 					CornerGlobal odCornerGlobal = new CornerGlobal();
 					odCornerGlobal.setX(Double.toString(outline.getY()));
@@ -256,7 +256,7 @@ public class Converter {
 					odOutline.getCornerGlobal().add(odCornerGlobal);
 				});
 				int idCounter = 0;
-				for (Map.Entry<Boolean, List<Way>> entry : junction.nodeLinks.links.entrySet()) {
+				for (Map.Entry<Boolean, List<Way>> entry : junction.node.links.entrySet()) {
 					for (Way way : entry.getValue()) {
 						Connection odConnection = new Connection();
 						odConnection.setId(Integer.toString(idCounter));

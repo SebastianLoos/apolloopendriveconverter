@@ -16,8 +16,9 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 
+import com.google.common.collect.ImmutableList;
+
 import de.apollomasterbeuth.apolloconverter.osm.Node;
-import de.apollomasterbeuth.apolloconverter.osm.NodeLinks;
 import de.apollomasterbeuth.apolloconverter.osm.Way;
 import de.apollomasterbeuth.apolloconverter.osm.WayNode;
 import de.apollomasterbeuth.apolloconverter.osm.WayNodeConnection;
@@ -34,6 +35,7 @@ import de.apollomasterbeuth.apolloconverter.structure.Signal;
 import de.apollomasterbeuth.logger.Log;
 import de.uzl.itm.jaxb4osm.jaxb.NodeElement;
 import de.uzl.itm.jaxb4osm.jaxb.OsmElement;
+import de.uzl.itm.jaxb4osm.jaxb.WayElement;
 import de.uzl.itm.jaxb4osm.tools.OsmUnmarshaller;
 
 public class OSMStructureReader {
@@ -62,41 +64,17 @@ public class OSMStructureReader {
 		
 		
 		log.log(root.getVersion());
-		List<Way> roadWays = new ArrayList<Way>();
+		List<Way> roadWays = getRoadWays(root.getWayElements());
 		List<WayNode> roadNodes = new ArrayList<WayNode>();
-		List<Node> trafficLightNodes = new ArrayList<Node>();
+		List<Node> trafficLightNodes = getTrafficLightNodes(root.getNodeElements());
 		
-		root.getWayElements().forEach(way->{
-			way.getTags().forEach((k,v)->{
-				if ((k.equals("highway"))&&(Arrays.stream(highwayTags).anyMatch(x -> v.equals(x)))) {
-					Way road = new Way();
-					List<Long> waysTemp = new ArrayList<Long>(); 
-					way.getNdElements().forEach(node->{
-						waysTemp.add(node.getReference());
-					});
-					road.nodeIDs = waysTemp.stream().mapToLong(l -> l).toArray();
-					road.id = way.getID();
-					road.type = v;
-					road.oneway = way.isOneWay();
-					roadWays.add(road);
-				}
-			});
-		});
+		
 		log.log("Roads: " + roadWays.size());
 		
-		root.getNodeElements().forEach(node->{
-			node.getTags().forEach((k,v)->{
-				if ((k.equals("highway"))&&(v.equals("traffic_signals"))) {
-					Node trafficLight = new Node(node.getLongitude(), node.getLatitude(), node.getID());
-					trafficLightNodes.add(trafficLight);
-				}
-			});
-		});
 		
-		List<NodeLinks> nodeLinks = new ArrayList<NodeLinks>();
+		//List<NodeLinks> nodeLinks = new ArrayList<NodeLinks>();
 		
 		roadWays.forEach(way->{
-			
 			way.nodes = new WayNode[way.nodeIDs.length];
 			for(int i = 0; i< way.nodeIDs.length; i++) {
 				long currentId = way.nodeIDs[i];
@@ -118,49 +96,22 @@ public class OSMStructureReader {
 				
 				way.nodes[i] = node;
 				if (i==0) {
-					Optional<NodeLinks> nodeLinksMatch = nodeLinks.stream().filter(x -> x.id == currentId).findFirst();
-					if (!nodeLinksMatch.isPresent()) {
-						NodeLinks nodeLinksTemp = new NodeLinks(node.id, node);
-						List<Way> wayList = new ArrayList<Way>();
-						wayList.add(way);
-						nodeLinksTemp.links.put(true, wayList);
-						nodeLinks.add(nodeLinksTemp);
-						way.start = nodeLinksTemp;
+					if (node.links.containsKey(true)) {
+						node.links.get(true).add(way);
 					} else {
-						NodeLinks nodeLinksTemp = nodeLinksMatch.get();
-						
-						if (nodeLinksTemp.links.containsKey(true)) {
-							nodeLinksTemp.links.get(true).add(way);
-						} else {
-							List<Way> wayList = new ArrayList<Way>();
-							wayList.add(way);
-							nodeLinksTemp.links.put(true, wayList);
-						}
-						way.start = nodeLinksTemp;
+						List<Way> wayList = new ArrayList<Way>();
+						node.links.put(true, wayList);
 					}
+					way.start = node;
 				}
 				if (i==way.nodeIDs.length-1) {
-					Optional<NodeLinks> nodeLinksMatch = nodeLinks.stream().filter(x -> x.id == currentId).findFirst();
-					if (!nodeLinksMatch.isPresent()) {
-						NodeLinks nodeLinksTemp = new NodeLinks(node.id, node);
-						nodeLinksTemp.links = new HashMap<Boolean, List<Way>>();
-						List<Way> wayList = new ArrayList<Way>();
-						wayList.add(way);
-						nodeLinksTemp.links.put(false, wayList);
-						nodeLinks.add(nodeLinksTemp);
-						way.end = nodeLinksTemp;
+					if (node.links.containsKey(false)) {
+						node.links.get(false).add(way);
 					} else {
-						NodeLinks nodeLinksTemp = nodeLinksMatch.get();
-						
-						if (nodeLinksTemp.links.containsKey(false)) {
-							nodeLinksTemp.links.get(false).add(way);
-						} else {
-							List<Way> wayList = new ArrayList<Way>();
-							wayList.add(way);
-							nodeLinksTemp.links.put(false, wayList);
-						}
-						way.end = nodeLinksTemp;
+						List<Way> wayList = new ArrayList<Way>();
+						node.links.put(false, wayList);
 					}
+					way.end = node;
 				}
 			}
 		});
@@ -177,32 +128,22 @@ public class OSMStructureReader {
 						way.id = randomLong();
 						way.oneway = wayNodeConnection.way.oneway;
 						
-						Optional<NodeLinks> nodeLinksMatch = nodeLinks.stream().filter(x -> x.id == wayNode.id).findFirst();
-						NodeLinks nodeLinksTemp;
-						if (nodeLinksMatch.isPresent()) {
-							nodeLinksTemp = nodeLinksMatch.get();
-							if (nodeLinksTemp.links.containsKey(true)) {
-								nodeLinksTemp.links.get(true).add(way);
+							if (wayNode.links.containsKey(true)) {
+								wayNode.links.get(true).add(way);
 							} else {
 								List<Way> wayList = new ArrayList<Way>();
 								wayList.add(way);
-								nodeLinksTemp.links.put(true, wayList);
+								wayNode.links.put(true, wayList);
 							}
-							if (nodeLinksTemp.links.containsKey(false)) {
-								nodeLinksTemp.links.get(false).add(wayNodeConnection.way);
+							if (wayNode.links.containsKey(false)) {
+								wayNode.links.get(false).add(wayNodeConnection.way);
 							} else {
 								List<Way> wayList = new ArrayList<Way>();
 								wayList.add(wayNodeConnection.way);
-								nodeLinksTemp.links.put(false, wayList);
+								wayNode.links.put(false, wayList);
 							}
-						} else {
-							nodeLinksTemp = new NodeLinks(wayNode.id, wayNode);
-							List<Way> wayList = new ArrayList<Way>();
-							wayList.add(way);
-							nodeLinksTemp.links.put(true, wayList);
-							nodeLinks.add(nodeLinksTemp);
-						}
-						way.start = nodeLinksTemp;
+							
+						way.start = wayNode;
 						way.end = wayNodeConnection.way.end;
 						List<Way> falseList = way.end.links.get(false);
 						if(falseList.contains(wayNodeConnection.way)) {
@@ -210,7 +151,7 @@ public class OSMStructureReader {
 						}
 						falseList.add(way);
 						
-						wayNodeConnection.way.end = nodeLinksTemp;
+						wayNodeConnection.way.end = wayNode;
 						
 						way.nodes = new WayNode[wayNodeConnection.way.nodes.length-wayNodeConnection.position];
 						way.nodeIDs = new long[wayNodeConnection.way.nodes.length-wayNodeConnection.position];
@@ -243,7 +184,7 @@ public class OSMStructureReader {
 			}
 		}
 		
-		environment.junctions = getJunctions(nodeLinks, 0.0001);
+		environment.junctions = getJunctions(roadNodes, 0.0001);
 		log.log("Junctions: " + environment.junctions.size());
 		
 		roadWays.forEach(way->{			
@@ -330,12 +271,12 @@ public class OSMStructureReader {
 
 	}
 	
-	private static List<Junction> getJunctions(List<NodeLinks> nodeLinks, double junctionAreaSize){
+	private static List<Junction> getJunctions(List<WayNode> nodes, double junctionAreaSize){
 		List<Junction> junctions = new ArrayList<Junction>();
-		nodeLinks.stream().filter(x->x.links.entrySet().stream().map(y->y.getValue().size()).reduce(0, (a, b) -> a+b) > 1).forEach(nodeLink->{
+		nodes.stream().filter(x->x.links.entrySet().stream().map(y->y.getValue().size()).reduce(0, (a, b) -> a+b) > 1).forEach(node->{
 			Junction junction = new Junction();
-			junction.nodeLinks = nodeLink;
-			Point center = nodeLink.node.geometry;
+			junction.node = node;
+			Point center = node.geometry;
 			
 			Arrays.stream(center.buffer(junctionAreaSize, 1).getCoordinates()).map(x->new GeometryFactory().createPoint(x)).collect(Collectors.toList()).forEach(point->{
 				junction.outline.add(point);
@@ -346,6 +287,53 @@ public class OSMStructureReader {
 		return junctions;
 	}
 	
+	private static List<Node> getNodesOnWay(Road road, List<Node> nodes){
+		List<Node> nodesOnWay = new ArrayList<Node>();
+		
+		org.locationtech.jts.geom.Geometry bufferZone = road.geometry.geometry.buffer(0.00002);
+		
+		nodes.forEach(node->{
+			if (bufferZone.contains(node.geometry)) {
+				nodesOnWay.add(node);
+			}
+		});
+		
+		return nodesOnWay;
+	}
+	
+	private static List<Way> getRoadWays(ImmutableList<WayElement> wayElements){
+		List<Way> roadWays = new ArrayList<Way>();
+		wayElements.forEach(way->{
+			way.getTags().forEach((k,v)->{
+				if ((k.equals("highway"))&&(Arrays.stream(highwayTags).anyMatch(x -> v.equals(x)))) {
+					Way road = new Way();
+					List<Long> waysTemp = new ArrayList<Long>(); 
+					way.getNdElements().forEach(node->{
+						waysTemp.add(node.getReference());
+					});
+					road.nodeIDs = waysTemp.stream().mapToLong(l -> l).toArray();
+					road.id = way.getID();
+					road.type = v;
+					road.oneway = way.isOneWay();
+					roadWays.add(road);
+				}
+			});
+		});
+		return roadWays;
+	}
+	
+	private static List<Node> getTrafficLightNodes(ImmutableList<NodeElement> nodeElements){
+		List<Node> trafficLightNodes = new ArrayList<Node>();
+		nodeElements.forEach(node->{
+			node.getTags().forEach((k,v)->{
+				if ((k.equals("highway"))&&(v.equals("traffic_signals"))) {
+					Node trafficLight = new Node(node.getLongitude(), node.getLatitude(), node.getID());
+					trafficLightNodes.add(trafficLight);
+				}
+			});
+		});
+		return trafficLightNodes;
+	}
 	
 	private static long randomLong() {
 	    long leftLimit = 1L;
@@ -361,19 +349,4 @@ public class OSMStructureReader {
 		return OsmUnmarshaller.unmarshal(inputStream);
 	}
 	
-	private static List<Node> getNodesOnWay(Road road, List<Node> nodes){
-		List<Node> nodesOnWay = new ArrayList<Node>();
-		
-		org.locationtech.jts.geom.Geometry bufferZone = road.geometry.geometry.buffer(0.00002);
-		
-		nodes.forEach(node->{
-			if (bufferZone.contains(node.geometry)) {
-				nodesOnWay.add(node);
-			}
-		});
-		
-		//log.log("TrafficLights on node: " + nodesOnWay.size());
-		return nodesOnWay;
-	}
-
 }

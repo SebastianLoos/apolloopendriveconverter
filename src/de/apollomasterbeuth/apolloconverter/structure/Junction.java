@@ -5,10 +5,10 @@ import java.util.List;
 
 import org.locationtech.jts.geom.Point;
 
-import de.apollomasterbeuth.apolloconverter.osm.NodeLinks;
+import de.apollomasterbeuth.apolloconverter.osm.WayNode;
 
 public class Junction {
-	public NodeLinks nodeLinks;
+	public WayNode node;
 	
 	public List<Point> outline = new ArrayList<Point>();
 }
