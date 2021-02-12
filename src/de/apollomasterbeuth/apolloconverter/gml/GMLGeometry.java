@@ -8,10 +8,7 @@ public class GMLGeometry {
 
 	public GMLGeometry(Coordinate[] coordinates) {
 		geometry = new GMLLineString(CoordinateArraySequenceFactory.instance().create(coordinates), new GeometryFactory());
-		connection = new GMLGeometryConnection();
 	}
 	
-	
 	public GMLLineString geometry;
-	public GMLGeometryConnection connection;
 }

@@ -3,18 +3,13 @@ package de.apollomasterbeuth.apolloconverter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import javax.xml.bind.JAXB;
 
 import org.apache.lucene.util.SloppyMath;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;
 import org.osgeo.proj4j.BasicCoordinateTransform;
 import org.osgeo.proj4j.CRSFactory;
 import org.osgeo.proj4j.CoordinateReferenceSystem;
@@ -89,7 +84,6 @@ public class GMLStructureReader {
 	}
 	
 	private static void getNeighbours(GMLData data, double bufferSize) {
-		
 		class Endpoint{
 			public Point point;
 			public GMLGeometry geometryObject;
@@ -113,7 +107,7 @@ public class GMLStructureReader {
 		int count = 0;
 		for (GMLLane lane : data.lanes){
 			count++;
-			log.log(count + "/" + data.lanes.size());
+			log.log("Calculating neighbours of lane " + count + "/" + data.lanes.size());
 			
 			endpoints.stream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getStartPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
 				lane.connection.addPredecessor(endpoint.geometryObject, endpoint.isStartPoint);
