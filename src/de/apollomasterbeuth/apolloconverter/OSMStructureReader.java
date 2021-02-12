@@ -5,13 +5,11 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.locationtech.jts.awt.PointShapeFactory.X;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -82,39 +80,43 @@ public class OSMStructureReader {
 		environment.roads.addAll(getRoads(roads, trafficLightNodes));
 		
 		environment.roads.forEach(road->{
-			roads.stream().filter(x->Long.toString(x.way.id).equals(road.id)).findFirst().ifPresent(way->{
-				way.getStart().links.forEach((k,v)->{
-					v.forEach(linkedWay->{
-						if (!Long.toString(linkedWay.id).equals(road.id)) {
-							environment.roads.stream().filter(x->x.id.equals(Long.toString(linkedWay.id))).findFirst().ifPresent(predecessor->{
-								Link link = new Link();
-								link.contactPoint = k;
-								link.type = true;
-								link.linkedRoad = predecessor;
-								road.links.add(link);
-							});
-						}
-					});
-				});
-				way.getEnd().links.forEach((k,v)->{
-					v.forEach(linkedWay->{
-						if (!Long.toString(linkedWay.id).equals(road.id)) {
-							environment.roads.stream().filter(x->x.id.equals(Long.toString(linkedWay.id))).findFirst().ifPresent(successor->{
-								Link link = new Link();
-								link.contactPoint = k;
-								link.type = false;
-								link.linkedRoad = successor;
-								road.links.add(link);
-							});
-						}
-					});
-				});
-			});
+			addLinkToRoad(road, roads, environment.roads);
 		});	
 			
 		
 		return environment;
 
+	}
+	
+	private static void addLinkToRoad(Road road, List<de.apollomasterbeuth.apolloconverter.osm.Road> osmRoads, List<Road> roads) {
+		osmRoads.stream().filter(x->Long.toString(x.way.id).equals(road.id)).findFirst().ifPresent(way->{
+			way.getStart().links.forEach((k,v)->{
+				v.forEach(linkedWay->{
+					if (!Long.toString(linkedWay.id).equals(road.id)) {
+						roads.stream().filter(x->x.id.equals(Long.toString(linkedWay.id))).findFirst().ifPresent(predecessor->{
+							Link link = new Link();
+							link.contactPoint = k;
+							link.type = true;
+							link.linkedRoad = predecessor;
+							road.links.add(link);
+						});
+					}
+				});
+			});
+			way.getEnd().links.forEach((k,v)->{
+				v.forEach(linkedWay->{
+					if (!Long.toString(linkedWay.id).equals(road.id)) {
+						roads.stream().filter(x->x.id.equals(Long.toString(linkedWay.id))).findFirst().ifPresent(successor->{
+							Link link = new Link();
+							link.contactPoint = k;
+							link.type = false;
+							link.linkedRoad = successor;
+							road.links.add(link);
+						});
+					}
+				});
+			});
+		});
 	}
 	
 	private static List<Junction> getJunctions(List<WayNode> nodes, double junctionAreaSize){
