@@ -73,58 +73,13 @@ public class OSMStructureReader {
 
 		List<Node> trafficLightNodes = getTrafficLightNodes(root.getNodeElements());
 		
-		List<de.apollomasterbeuth.apolloconverter.osm.Road> roads = getRoads(roadNodes, roadWays);
+		List<de.apollomasterbeuth.apolloconverter.osm.Road> roads = getOSMRoads(roadNodes, roadWays);
 		
 		
 		environment.junctions = getJunctions(roadNodes, 0.0001);
 		log.log("Junctions: " + environment.junctions.size());
 		
-		roads.forEach(osmRoad->{			
-			Road road = new Road();
-			road.id = Long.toString(osmRoad.way.id);
-			
-			Stream<Point> points = Arrays.stream(osmRoad.nodes).map(x->x.geometry);
-			LineString lineString = new GeometryFactory().createLineString(points.map(x->new Coordinate(x.getX(), x.getY())).toArray(Coordinate[]::new));
-			road.geometry = new NetworkGeometry(lineString, new ArrayList<Point>());
-			
-			LaneSection laneSection = new LaneSection();
-			Center center = new Center();
-			BorderType borderType = new BorderType();
-			Geometry geometry = new Geometry();
-			
-			borderType.color = "white";
-			borderType.sOffset = 0;
-			borderType.type = "solid";
-			
-			geometry.sOffset = 0;
-			geometry.x = osmRoad.nodes[0].getGeometry().getX();
-			geometry.y = osmRoad.nodes[0].getGeometry().getY();
-			geometry.z = 0.0;
-			geometry.length = SpatialOperations.distance(osmRoad.nodes[0].getGeometry(), osmRoad.nodes[osmRoad.nodes.length-1].getGeometry());
-			
-			geometry.geometry = new GeometryFactory().createLineString(Arrays.stream(osmRoad.nodes).map(x->new Coordinate(x.getGeometry().getX(), x.getGeometry().getY())).toArray(Coordinate[]::new));
-			
-			center.borderType = borderType;
-			center.geometry = geometry;
-			laneSection.center = center;
-			laneSection.singleSide = osmRoad.way.oneway;
-			road.laneSections.add(laneSection);
-			
-			getNodesOnWay(road, trafficLightNodes).forEach(node->{
-				Signal signal = new Signal();
-				List<Point> outline = new ArrayList<Point>();
-				for (int i=0; i<5; i++) {
-					outline.add(node.getGeometry());
-				}
-				signal.outline = outline;
-				signal.id = Long.toString(node.id);
-				signal.type = "trafficLight";
-				signal.layoutType = "mix3Vertical";
-				road.signals.add(signal);
-			});
-			
-			environment.roads.add(road);
-		});
+		environment.roads.addAll(getRoads(roads, trafficLightNodes));
 		
 		environment.roads.forEach(road->{
 			roads.stream().filter(x->Long.toString(x.way.id).equals(road.id)).findFirst().ifPresent(way->{
@@ -192,6 +147,25 @@ public class OSMStructureReader {
 		return nodesOnWay;
 	}
 	
+	private static List<de.apollomasterbeuth.apolloconverter.osm.Road> getOSMRoads(List<WayNode> roadNodes, List<Way> roadWays){
+		List<de.apollomasterbeuth.apolloconverter.osm.Road> roads = new ArrayList<de.apollomasterbeuth.apolloconverter.osm.Road>();
+		roadWays.forEach(roadWay->{
+			List<WayNode> nodes = new ArrayList<WayNode>();
+			for (long nodeID : roadWay.nodeIDs) {
+				Optional<WayNode> wayNodeOptional = roadNodes.stream().filter(x->x.id==nodeID).findFirst();
+				if (wayNodeOptional.isPresent()) {
+					nodes.add(wayNodeOptional.get());
+				} else {
+					System.out.println(nodeID + " not found");
+				}
+			}
+			System.out.println(roadWay.id + ": Found " +nodes.size() + " nodes of " + roadWay.nodeIDs.length);
+			de.apollomasterbeuth.apolloconverter.osm.Road road = new de.apollomasterbeuth.apolloconverter.osm.Road(roadWay, nodes.toArray(new WayNode[0]));
+			roads.add(road);
+		});
+		return roads;
+	}
+	
 	private static List<WayNode> getRoadNodes(List<Way> roadWays, OsmElement root){
 		List<WayNode> roadNodes = new ArrayList<WayNode>();
 		
@@ -236,22 +210,56 @@ public class OSMStructureReader {
 		return roadNodes;
 	}
 	
-	private static List<de.apollomasterbeuth.apolloconverter.osm.Road> getRoads(List<WayNode> roadNodes, List<Way> roadWays){
-		List<de.apollomasterbeuth.apolloconverter.osm.Road> roads = new ArrayList<de.apollomasterbeuth.apolloconverter.osm.Road>();
-		roadWays.forEach(roadWay->{
-			List<WayNode> nodes = new ArrayList<WayNode>();
-			for (long nodeID : roadWay.nodeIDs) {
-				Optional<WayNode> wayNodeOptional = roadNodes.stream().filter(x->x.id==nodeID).findFirst();
-				if (wayNodeOptional.isPresent()) {
-					nodes.add(wayNodeOptional.get());
-				} else {
-					System.out.println(nodeID + " not found");
+	private static List<Road> getRoads(List<de.apollomasterbeuth.apolloconverter.osm.Road> osmRoads, List<Node> trafficLightNodes){
+		List<Road> roads = new ArrayList<Road>();
+		
+		osmRoads.forEach(osmRoad->{			
+			Road road = new Road();
+			road.id = Long.toString(osmRoad.way.id);
+			
+			Stream<Point> points = Arrays.stream(osmRoad.nodes).map(x->x.geometry);
+			LineString lineString = new GeometryFactory().createLineString(points.map(x->new Coordinate(x.getX(), x.getY())).toArray(Coordinate[]::new));
+			road.geometry = new NetworkGeometry(lineString, new ArrayList<Point>());
+			
+			LaneSection laneSection = new LaneSection();
+			Center center = new Center();
+			BorderType borderType = new BorderType();
+			Geometry geometry = new Geometry();
+			
+			borderType.color = "white";
+			borderType.sOffset = 0;
+			borderType.type = "solid";
+			
+			geometry.sOffset = 0;
+			geometry.x = osmRoad.nodes[0].getGeometry().getX();
+			geometry.y = osmRoad.nodes[0].getGeometry().getY();
+			geometry.z = 0.0;
+			geometry.length = SpatialOperations.distance(osmRoad.nodes[0].getGeometry(), osmRoad.nodes[osmRoad.nodes.length-1].getGeometry());
+			
+			geometry.geometry = new GeometryFactory().createLineString(Arrays.stream(osmRoad.nodes).map(x->new Coordinate(x.getGeometry().getX(), x.getGeometry().getY())).toArray(Coordinate[]::new));
+			
+			center.borderType = borderType;
+			center.geometry = geometry;
+			laneSection.center = center;
+			laneSection.singleSide = osmRoad.way.oneway;
+			road.laneSections.add(laneSection);
+			
+			getNodesOnWay(road, trafficLightNodes).forEach(node->{
+				Signal signal = new Signal();
+				List<Point> outline = new ArrayList<Point>();
+				for (int i=0; i<5; i++) {
+					outline.add(node.getGeometry());
 				}
-			}
-			System.out.println(roadWay.id + ": Found " +nodes.size() + " nodes of " + roadWay.nodeIDs.length);
-			de.apollomasterbeuth.apolloconverter.osm.Road road = new de.apollomasterbeuth.apolloconverter.osm.Road(roadWay, nodes.toArray(new WayNode[0]));
+				signal.outline = outline;
+				signal.id = Long.toString(node.id);
+				signal.type = "trafficLight";
+				signal.layoutType = "mix3Vertical";
+				road.signals.add(signal);
+			});
+			
 			roads.add(road);
 		});
+		
 		return roads;
 	}
 	
