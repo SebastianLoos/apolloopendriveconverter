@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXB;
 
@@ -33,22 +34,29 @@ public class GMLStructureReader {
 	public static GMLData read(String filename, int epsg) {
 		
 		GMLData gmlData = new GMLData();
+		log.log("Reading GML data from file " + filename);
 		try {
 			FeatureCollection fc = readGMLFile(filename, epsg);
-			int count = 0;
-			for (Member member : fc.getMember()){
-				count++;
-				if (member.getSBordstein()!=null) {
-					log.log("Loading boundary data " + count + "/" + fc.getMember().size());
-					gmlData.boundaries.addAll(getBoundary(member.getSBordstein(), epsg));
-				}
-				if (member.getSFahrbahnmarkierungLinie()!=null) {
-					log.log("Loading lane data " + count + "/" + fc.getMember().size());
-					gmlData.lanes.addAll(getLanes(member.getSFahrbahnmarkierungLinie(), epsg));
-				}
-			}
+			
+			gmlData.boundaries.addAll(
+					fc.getMember().stream()
+					.filter(x->x.getSBordstein()!=null)
+					.parallel()
+					.map(member->getBoundary(member.getSBordstein(), epsg))
+					.flatMap(List::stream)
+					.collect(Collectors.toList())
+					);
+			gmlData.lanes.addAll(fc.getMember().stream()
+					.filter(x->x.getSFahrbahnmarkierungLinie()!=null)
+					.parallel()
+					.map(member->getLanes(member.getSFahrbahnmarkierungLinie(), epsg))
+					.flatMap(List::stream)
+					.collect(Collectors.toList())
+					);
+			
+			log.log("Read " + gmlData.boundaries.size() + " boundaries and " + gmlData.lanes.size() + " lanes.");
 			try {
-				getNeighbours(gmlData, 0.00001);
+				getConnectedGeometries(gmlData, 0.00001);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -83,7 +91,7 @@ public class GMLStructureReader {
 		return SloppyMath.haversinMeters(lat1, lon1, lat2, lon2);
 	}
 	
-	private static void getNeighbours(GMLData data, double bufferSize) {
+	private static void getConnectedGeometries(GMLData data, double bufferSize) {
 		class Endpoint{
 			public Point point;
 			public GMLGeometry geometryObject;
@@ -96,7 +104,7 @@ public class GMLStructureReader {
 			}
 		}
 		
-		log.log("Get Neighbours of lanes:");
+		log.log("Get connections of lanes:");
 
 		List<Endpoint> endpoints = new ArrayList<Endpoint>();
 		data.lanes.forEach(lane->{
@@ -104,20 +112,19 @@ public class GMLStructureReader {
 			endpoints.add(new Endpoint(lane.geometry.getEndPoint(), lane, false));
 		});
 		
-		int count = 0;
-		for (GMLLane lane : data.lanes){
-			count++;
-			log.log("Calculating neighbours of lane " + count + "/" + data.lanes.size());
-			
-			endpoints.stream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getStartPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
+		long start = System.nanoTime();
+		data.lanes.parallelStream().forEach(lane->{
+			endpoints.parallelStream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getStartPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
 				lane.connection.addPredecessor(endpoint.geometryObject, endpoint.isStartPoint);
-				log.log("predecessor added");
 			});
-			endpoints.stream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getEndPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
+			endpoints.parallelStream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getEndPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
 				lane.connection.addSuccessor(endpoint.geometryObject, endpoint.isStartPoint);
-				log.log("successor added");
 			});
-		}
+		});
+		long end = System.nanoTime();
+
+		long duration = (end - start)/1000000L;
+		log.log("Lanes connected in: " + duration + " ms");
 	}
 	
 	private static List<GMLBoundary> getBoundary(SBordstein boundary, int epsg){
@@ -207,7 +214,12 @@ public class GMLStructureReader {
 						});
 						
 						Coordinate[] coordinateArray = dstCoordinates.stream().map(x->new Coordinate(x.y, x.x)).toArray(Coordinate[]::new);
-						lanes.add(new GMLLane(coordinateArray));
+						
+						List<Coordinate[]> splitCoordinateArrays = splitLineString(coordinateArray, 2d);
+						
+						splitCoordinateArrays.forEach(splitCoordinateArray->{
+							lanes.add(new GMLLane(splitCoordinateArray));
+						});					
 					});
 				});
 			});

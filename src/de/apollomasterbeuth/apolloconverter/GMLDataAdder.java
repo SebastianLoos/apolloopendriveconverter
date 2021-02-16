@@ -33,19 +33,20 @@ public class GMLDataAdder {
 	
 	public static void addData(GMLData data, Environment env) {
 		addBoundaries(data.boundaries, env);
-		//addLanes(data.lanes, env);
+		addLanes(data.lanes, env);
 		mergeBoundaries(env, 0.0000125);
 	}
 	
 	public static void addBoundaries(List<GMLBoundary> gmlBoundaries, Environment env) {
 		log.log("Adding boundaries from " + gmlBoundaries.size() + " lines");
+		long start = System.nanoTime();
 		int count = 0;
 		for (GMLBoundary gmlBoundary : gmlBoundaries){
 			count++;
 			Optional<Road> roadOptional = getNearestRoad(gmlBoundary.geometry, env, 0.0003, true);
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
-				System.out.println(road.id + " is the nearest " + count + "/" + gmlBoundaries.size());
+				//log.log(road.id + " is the nearest " + count + "/" + gmlBoundaries.size());
 				Boundary boundary = new Boundary();
 				Geometry geometry = new Geometry();
 				geometry.geometry = gmlBoundary.geometry;
@@ -59,6 +60,9 @@ public class GMLDataAdder {
 				road.laneSections.get(0).boundaries.add(boundary);
 			}
 		}
+		long end = System.nanoTime();
+		long duration = (end - start)/1000000L;
+		log.log("Boundaries added in " + duration + " ms");
 	}
 	
 	public static void mergeBoundaries(Environment env, double bufferSize) {
@@ -89,18 +93,18 @@ public class GMLDataAdder {
 			}
 			
 			public Deque<Point> initiateProcessing(List<Connection> connections){
-				log.log("initiate at boundary " + boundary.geometry.geometry.getStartPoint() + " " + boundary.geometry.geometry.getEndPoint());
+				//log.log("initiate at boundary " + boundary.geometry.geometry.getStartPoint() + " " + boundary.geometry.geometry.getEndPoint());
 				Deque<Point> points = new ArrayDeque<Point>();
 				processed = true;
 				for (Coordinate coordinate : boundary.geometry.geometry.getCoordinates()) {
 					points.add(new GeometryFactory().createPoint(coordinate));
 				}
 				if (predecessor.isPresent()) {
-					log.log("continue with predecessor " + predecessor.get().boundary.geometry.geometry.getStartPoint() + " " + predecessor.get().boundary.geometry.geometry.getEndPoint() + " start is " + predecessor.get().isStartPoint);
+					//log.log("continue with predecessor " + predecessor.get().boundary.geometry.geometry.getStartPoint() + " " + predecessor.get().boundary.geometry.geometry.getEndPoint() + " start is " + predecessor.get().isStartPoint);
 					connections.stream().filter(x->x.boundary==predecessor.get().boundary).findFirst().get().processConnection(points, predecessor.get().isStartPoint, true, connections);
 				}
 				if (successor.isPresent()) {
-					log.log("continue with successor " + successor.get().boundary.geometry.geometry.getStartPoint() + " " + successor.get().boundary.geometry.geometry.getEndPoint() + " start is " + successor.get().isStartPoint);
+					//log.log("continue with successor " + successor.get().boundary.geometry.geometry.getStartPoint() + " " + successor.get().boundary.geometry.geometry.getEndPoint() + " start is " + successor.get().isStartPoint);
 					connections.stream().filter(x->x.boundary==successor.get().boundary).findFirst().get().processConnection(points, successor.get().isStartPoint, false, connections);
 				}
 				return points;
@@ -148,14 +152,14 @@ public class GMLDataAdder {
 		
 		log.log("Merging boundaries");
 		env.roads.forEach(road->{
-			log.log("Merging boundaries of road " + road.id);
+			//log.log("Merging boundaries of road " + road.id);
 	
 			road.laneSections.forEach(laneSection->{
 				Map<String, List<Boundary>> boundariesByType = laneSection.boundaries.stream().collect(Collectors.groupingBy(x->x.type));
 				laneSection.boundaries.clear();
 				
 				boundariesByType.forEach((type, list)->{
-					log.log("type " + type);
+					//log.log("type " + type);
 					List<Endpoint> endpoints = new ArrayList<Endpoint>();
 					list.forEach(boundary->{
 						endpoints.add(new Endpoint(boundary.geometry.geometry.getStartPoint(), boundary, true));
@@ -175,7 +179,7 @@ public class GMLDataAdder {
 								.filter(x->x.point.isWithinDistance(boundary.geometry.geometry.getEndPoint(), bufferSize)).min((e1, e2)->
 							Double.compare(boundary.geometry.geometry.getEndPoint().buffer(bufferSize).distance(e1.point), 
 								boundary.geometry.geometry.getEndPoint().buffer(bufferSize).distance(e2.point)));
-						log.log(count + "/" + list.size() + " start:" + neighbourStart.isPresent() + " end:" + neighbourEnd.isPresent());
+						//log.log(count + "/" + list.size() + " start:" + neighbourStart.isPresent() + " end:" + neighbourEnd.isPresent());
 						boundaryConnections.add(new Connection(boundary, neighbourStart, neighbourEnd));
 					}
 					
@@ -197,20 +201,22 @@ public class GMLDataAdder {
 						laneSection.boundaries.add(newBoundary);
 					}
 					
-					log.log("Merged into " + newBoundaryCount + " boundaries");
+					//log.log("Merged into " + newBoundaryCount + " boundaries");
 				});
 				
 			});
 		});
+		log.log("Boundaries merged");
 	}
 	
 	public static void addLanes(List<GMLLane> gmlLanes, Environment env) {
 		log.log("Adding lanes from " + gmlLanes.size() + " lines");
+		long start = System.nanoTime();
 		gmlLanes.forEach(gmlLane->{
 			Optional<Road> roadOptional = getNearestRoad(gmlLane.geometry, env, 0.0003, false);
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
-				System.out.println(road.id + " is the nearest");
+				//System.out.println(road.id + " is the nearest");
 				Lane lane = new Lane();
 				Geometry geometry = new Geometry();
 				geometry.geometry = gmlLane.geometry;
@@ -230,25 +236,27 @@ public class GMLDataAdder {
 				
 				if(SpatialOperations.getDeterminant(gmlLane.geometry.getCentroid(), road.geometry.geometry.getStartPoint(), road.geometry.geometry.getEndPoint())<0) {
 					lane.lane = 1;
-					log.log("Adding left lane");
+					//log.log("Adding left lane");
 					road.laneSections.get(0).left.add(lane);
 				} else {
 					lane.lane = -1;
-					log.log("Adding right lane");
+					//log.log("Adding right lane");
 					road.laneSections.get(0).right.add(lane);
 				}
 				
 			}
 		});
+		long end = System.nanoTime();
+		long duration = (end - start)/1000000L;
+		log.log("Lanes added in " + duration + " ms");
 	}
 	
 	private static Optional<Road> getNearestRoad(LineString lineString, Environment env, double bufferSize, boolean ignoreParallelIfOtherwiseEmpty) {
-		Stream<Road> nearbyRoads = env.roads.stream().filter(road->road.geometry.geometry.buffer(bufferSize).intersects(lineString));
-		Stream<Road> parallelRoads = nearbyRoads.filter(road->SpatialOperations.checkParallel(lineString, road.geometry.geometry));
-		Optional<Road> roadsOptional =  parallelRoads.min((road1, road2)->Double.compare(road1.geometry.geometry.distance(lineString),road2.geometry.geometry.distance(lineString)));
+		List<Road> nearbyRoads = env.roads.parallelStream().filter(road->road.geometry.geometry.buffer(bufferSize).intersects(lineString)).collect(Collectors.toList());
+		List<Road> parallelRoads = nearbyRoads.parallelStream().filter(road->SpatialOperations.checkParallel(lineString, road.geometry.geometry)).collect(Collectors.toList());
+		Optional<Road> roadsOptional = parallelRoads.parallelStream().min((road1, road2)->Double.compare(road1.geometry.geometry.distance(lineString),road2.geometry.geometry.distance(lineString)));
 		if (!roadsOptional.isPresent() && ignoreParallelIfOtherwiseEmpty) {
-			Stream<Road> nearbyRoads2 = env.roads.stream().filter(road->road.geometry.geometry.buffer(bufferSize).intersects(lineString));
-			return nearbyRoads2.min((road1, road2)->Double.compare(road1.geometry.geometry.distance(lineString),road2.geometry.geometry.distance(lineString)));
+			return nearbyRoads.parallelStream().min((road1, road2)->Double.compare(road1.geometry.geometry.distance(lineString),road2.geometry.geometry.distance(lineString)));
 		} else {
 			return roadsOptional;
 		}

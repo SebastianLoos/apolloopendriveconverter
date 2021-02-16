@@ -11,4 +11,8 @@ public class GMLLane extends GMLGeometry{
 		connection = new GMLGeometryConnection();
 	}
 	
+	@Override
+	public String toString() {
+		return super.geometry.toText();
+	}
 }

@@ -161,7 +161,7 @@ public class OSMStructureReader {
 					System.out.println(nodeID + " not found");
 				}
 			}
-			System.out.println(roadWay.id + ": Found " +nodes.size() + " nodes of " + roadWay.nodeIDs.length);
+			//System.out.println(roadWay.id + ": Found " +nodes.size() + " nodes of " + roadWay.nodeIDs.length);
 			de.apollomasterbeuth.apolloconverter.osm.Road road = new de.apollomasterbeuth.apolloconverter.osm.Road(roadWay, nodes.toArray(new WayNode[0]));
 			roads.add(road);
 		});
@@ -318,7 +318,7 @@ public class OSMStructureReader {
 			for (int i=0;i<wayNode.ways.size();i++){
 				Way way = wayNode.ways.get(i);
 				int nodePosition = way.getNodePosition(wayNode.id);
-				System.out.println("nodePosition of node " + wayNode.id + " in way " + way.id + " : " + nodePosition + " of " + (way.nodeIDs.length-1));
+				//System.out.println("nodePosition of node " + wayNode.id + " in way " + way.id + " : " + nodePosition + " of " + (way.nodeIDs.length-1));
 				if ((nodePosition!=0)&&(nodePosition!=way.nodeIDs.length-1)) {
 					Way newWay = new Way();
 					newWay.id = randomLong();
@@ -357,7 +357,7 @@ public class OSMStructureReader {
 							node.ways.add(newWay);
 							if (counter!=0) {
 								node.ways.remove(way);
-								System.out.println("Removed way " + way.id + " from node " + node.id);
+								//System.out.println("Removed way " + way.id + " from node " + node.id);
 							}
 						});
 					}
