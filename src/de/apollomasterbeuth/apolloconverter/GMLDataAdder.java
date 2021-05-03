@@ -4,8 +4,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -213,7 +215,7 @@ public class GMLDataAdder {
 		log.log("Adding lanes from " + gmlLanes.size() + " lines");
 		long start = System.nanoTime();
 		gmlLanes.forEach(gmlLane->{
-			Optional<Road> roadOptional = getNearestRoad(gmlLane.geometry, env, 0.0003, false);
+			Optional<Road> roadOptional = getNearestRoad(gmlLane.geometry, env, 0.0003, true);
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
 				//System.out.println(road.id + " is the nearest");
@@ -249,6 +251,24 @@ public class GMLDataAdder {
 		long end = System.nanoTime();
 		long duration = (end - start)/1000000L;
 		log.log("Lanes added in " + duration + " ms");
+	}
+	
+	
+	private static void mergeLanes(List<GMLLane> lanes) {
+		
+		Map<GMLLane,Boolean> laneStatus = new HashMap<GMLLane,Boolean>();
+		lanes.forEach(lane->laneStatus.put(lane, false));
+		
+		List<GMLLane> mergedLanes = new ArrayList<GMLLane>();
+		
+		while(laneStatus.containsValue(false)) {
+			List<Coordinate> coordinates = new ArrayList<Coordinate>();
+			Optional<Entry<GMLLane,Boolean>> unworkedItem = laneStatus.entrySet().stream().filter(x->x.getValue()==false).findFirst();
+			if (unworkedItem.isPresent()) {
+				GMLLane lane = unworkedItem.get().getKey();
+				coordinates.addAll(Arrays.stream(lane.geometry.getCoordinates()).collect(Collectors.toList()));
+			}
+		}
 	}
 	
 	private static Optional<Road> getNearestRoad(LineString lineString, Environment env, double bufferSize, boolean ignoreParallelIfOtherwiseEmpty) {

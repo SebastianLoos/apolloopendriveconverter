@@ -145,6 +145,7 @@ public class Converter {
 						odLane.getBorder().add(odBorder);
 						odLane.setId(Integer.toString(left.lane));
 						odLane.setUid(UUID.randomUUID().toString());
+						odLane.setDirection(Double.toString(left.distanceFromRoad));
 						odLane.setType("driving");
 						odLane.setTurnType("noTurn");
 						
@@ -178,6 +179,7 @@ public class Converter {
 						odLane.getBorder().add(odBorder);
 						odLane.setId(Integer.toString(right.lane));
 						odLane.setUid(UUID.randomUUID().toString());
+						odLane.setDirection(Double.toString(right.distanceFromRoad));
 						odLane.setType("driving");
 						odLane.setTurnType("noTurn");
 						

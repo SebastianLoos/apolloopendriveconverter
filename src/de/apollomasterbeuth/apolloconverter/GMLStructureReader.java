@@ -56,7 +56,7 @@ public class GMLStructureReader {
 			
 			log.log("Read " + gmlData.boundaries.size() + " boundaries and " + gmlData.lanes.size() + " lanes.");
 			try {
-				getConnectedGeometries(gmlData, 0.00001);
+				//connectGeometries(gmlData, 0.00001);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -91,41 +91,11 @@ public class GMLStructureReader {
 		return SloppyMath.haversinMeters(lat1, lon1, lat2, lon2);
 	}
 	
-	private static void getConnectedGeometries(GMLData data, double bufferSize) {
-		class Endpoint{
-			public Point point;
-			public GMLGeometry geometryObject;
-			public Boolean isStartPoint;
-			
-			public Endpoint(Point point, GMLGeometry geometryObject, Boolean isStartPoint) {
-				this.point = point;
-				this.geometryObject = geometryObject;
-				this.isStartPoint = isStartPoint;
-			}
-		}
-		
-		log.log("Get connections of lanes:");
-
-		List<Endpoint> endpoints = new ArrayList<Endpoint>();
-		data.lanes.forEach(lane->{
-			endpoints.add(new Endpoint(lane.geometry.getStartPoint(), lane, true));
-			endpoints.add(new Endpoint(lane.geometry.getEndPoint(), lane, false));
-		});
-		
-		long start = System.nanoTime();
-		data.lanes.parallelStream().forEach(lane->{
-			endpoints.parallelStream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getStartPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
-				lane.connection.addPredecessor(endpoint.geometryObject, endpoint.isStartPoint);
-			});
-			endpoints.parallelStream().filter(x->!x.geometryObject.equals(lane)).filter(x->lane.geometry.getEndPoint().buffer(bufferSize).intersects(x.point)).forEach(endpoint->{
-				lane.connection.addSuccessor(endpoint.geometryObject, endpoint.isStartPoint);
-			});
-		});
-		long end = System.nanoTime();
-
-		long duration = (end - start)/1000000L;
-		log.log("Lanes connected in: " + duration + " ms");
+	private static void connectGeometries(GMLData data, double bufferSize) {
+		GMLGeometryOperations.getConnectedGeometries(data.lanes, bufferSize, 0);
 	}
+	
+	
 	
 	private static List<GMLBoundary> getBoundary(SBordstein boundary, int epsg){
 		
@@ -219,12 +189,11 @@ public class GMLStructureReader {
 						
 						splitCoordinateArrays.forEach(splitCoordinateArray->{
 							lanes.add(new GMLLane(splitCoordinateArray));
-						});					
+						});
 					});
 				});
 			});
 		});
-		
 		return lanes;
 	}
 	
