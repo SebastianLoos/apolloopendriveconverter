@@ -1,9 +1,7 @@
 package de.apollomasterbeuth.apolloconverter.structure;
 
-import java.util.UUID;
-
 public class Center {
-	public UUID uid;
+	public String uid;
 	
 	public BorderType borderType;
 	

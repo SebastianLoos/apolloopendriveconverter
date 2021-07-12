@@ -10,39 +10,23 @@ import org.locationtech.jts.geom.Coordinate;
 
 public class GMLGeometryConnection {
 	
-	public List<Connection> predecessors = new ArrayList<Connection>();
+	public GMLGeometry geometry;
 	
-	public List<Connection> successors = new ArrayList<Connection>();
+	public Boolean connectToBeginning;
 	
-	public void addPredecessor(GMLGeometry geometry, Boolean connectToBeginning) {
-		predecessors.add(new Connection(geometry, connectToBeginning));
+	public GMLGeometryConnection(GMLGeometry geometry, Boolean connectToBeginning) {
+		this.geometry = geometry;
+		this.connectToBeginning = connectToBeginning;
 	}
 	
-	public void addSuccessor(GMLGeometry geometry, Boolean connectToBeginning) {
-		successors.add(new Connection(geometry, connectToBeginning));
-	}
-	
-	private class Connection{
-		
-		public GMLGeometry geometry;
-		
-		public Boolean connectToBeginning;
-		
-		public Connection(GMLGeometry geometry, Boolean connectToBeginning) {
-			this.geometry = geometry;
-			this.connectToBeginning = connectToBeginning;
-		}
-		
-		public Coordinate[] getDirectionalCoordinates() {
-			Coordinate[] coordinates =  geometry.geometry.getCoordinates();
-			if (connectToBeginning) {
-				return coordinates;
-			} else {
-				return IntStream.rangeClosed(1, coordinates.length)
-			      .mapToObj(i -> coordinates[coordinates.length - i])
-			      .toArray(Coordinate[]::new);
-			}
+	public Coordinate[] getDirectionalCoordinates() {
+		Coordinate[] coordinates =  geometry.geometry.getCoordinates();
+		if (connectToBeginning) {
+			return coordinates;
+		} else {
+			return IntStream.rangeClosed(1, coordinates.length)
+		      .mapToObj(i -> coordinates[coordinates.length - i])
+		      .toArray(Coordinate[]::new);
 		}
 	}
-
 }

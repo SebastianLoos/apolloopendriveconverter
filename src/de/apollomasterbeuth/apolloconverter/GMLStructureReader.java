@@ -56,7 +56,7 @@ public class GMLStructureReader {
 			
 			log.log("Read " + gmlData.boundaries.size() + " boundaries and " + gmlData.lanes.size() + " lanes.");
 			try {
-				//connectGeometries(gmlData, 0.00001);
+				connectGeometries(gmlData, 0.00001);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -92,6 +92,7 @@ public class GMLStructureReader {
 	}
 	
 	private static void connectGeometries(GMLData data, double bufferSize) {
+		log.log("Connecting lanes...");
 		GMLGeometryOperations.getConnectedGeometries(data.lanes, bufferSize, 0);
 	}
 	

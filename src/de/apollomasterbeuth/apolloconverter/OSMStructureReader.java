@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -240,6 +241,7 @@ public class OSMStructureReader {
 			
 			geometry.geometry = lineString; //new GeometryFactory().createLineString(Arrays.stream(osmRoad.nodes).map(x->new Coordinate(x.getGeometry().getX(), x.getGeometry().getY())).toArray(Coordinate[]::new));
 			
+			center.uid = UUID.randomUUID().toString();
 			center.borderType = borderType;
 			center.geometry = geometry;
 			laneSection.center = center;

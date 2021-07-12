@@ -8,6 +8,8 @@ public class GMLLane extends GMLGeometry{
 		super(coordinates);
 	}
 	
+	public double distanceToRoad;
+	
 	@Override
 	public String toString() {
 		return super.geometry.toText();

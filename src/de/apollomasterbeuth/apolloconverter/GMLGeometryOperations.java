@@ -1,11 +1,17 @@
 package de.apollomasterbeuth.apolloconverter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import de.apollomasterbeuth.apolloconverter.gml.GMLGeometry;
+import de.apollomasterbeuth.apolloconverter.gml.GMLGeometryConnection;
 import de.apollomasterbeuth.logger.Log;
 
 public class GMLGeometryOperations {
@@ -40,7 +46,7 @@ public class GMLGeometryOperations {
 					.buffer(bufferSize)
 					.intersects(x.point))
 				.forEach(endpoint->{
-					geometry.connection.addPredecessor(endpoint.geometryObject, endpoint.isStartPoint);
+					geometry.predecessors.add(new GMLGeometryConnection(endpoint.geometryObject, endpoint.isStartPoint));
 				});
 			endpoints
 				.parallelStream()
@@ -49,13 +55,17 @@ public class GMLGeometryOperations {
 					.buffer(bufferSize)
 					.intersects(x.point))
 				.forEach(endpoint->{
-					geometry.connection.addSuccessor(endpoint.geometryObject, endpoint.isStartPoint);
+					geometry.successors.add(new GMLGeometryConnection(endpoint.geometryObject, endpoint.isStartPoint));
 				});
 		});
 		long end = System.nanoTime();
 
 		long duration = (end - start)/1000000L;
 		log.log("Geometries connected in: " + duration + " ms");
+	}
+	
+	public static Collection<Point> convertCoordinatesToPointCollection(Coordinate[] coordinates){
+		return Arrays.stream(coordinates).map(coordinate->new GeometryFactory().createPoint(coordinate)).collect(Collectors.toCollection(ArrayList::new));
 	}
 
 }

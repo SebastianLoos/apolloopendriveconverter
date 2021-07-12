@@ -113,7 +113,7 @@ public class Converter {
 					
 					odCenterLane.getBorder().add(odCenterBorder);
 					odCenterLane.setId("0");
-					odCenterLane.setUid(UUID.randomUUID().toString());
+					odCenterLane.setUid(laneSection.center.uid);
 					
 					odCenter.getLane().add(odCenterLane);
 					
@@ -123,28 +123,32 @@ public class Converter {
 					laneSection.left.forEach(left->{
 						Lane odLane = new Lane();
 						Border odBorder = new Border();
-						Geometry odBorderGeometry = new Geometry();
-						odBorderGeometry.setLength(Double.toString(left.borderGeometry.length));
-						odBorderGeometry.setSOffset(Double.toString(left.borderGeometry.sOffset));
-						odBorderGeometry.setY(Double.toString(left.borderGeometry.x));
-						odBorderGeometry.setX(Double.toString(left.borderGeometry.y));
-						odBorderGeometry.setZ(Double.toString(left.borderGeometry.z));
 						
-						PointSet odBorderPointSet = new PointSet();
-						
-						left.borderGeometry.points().forEach(point->{
-							Point odPoint = new Point();
-							odPoint.setX(Double.toString(point.getY()));
-							odPoint.setY(Double.toString(point.getX()));
-							odBorderPointSet.getPoint().add(odPoint);
+						left.borderGeometry.forEach(border->{
+							Geometry odBorderGeometry = new Geometry();
+							odBorderGeometry.setLength(Double.toString(border.length));
+							odBorderGeometry.setSOffset(Double.toString(border.sOffset));
+							odBorderGeometry.setY(Double.toString(border.x));
+							odBorderGeometry.setX(Double.toString(border.y));
+							odBorderGeometry.setZ(Double.toString(border.z));
+							
+							PointSet odBorderPointSet = new PointSet();
+							
+							border.points().forEach(point->{
+								Point odPoint = new Point();
+								odPoint.setX(Double.toString(point.getY()));
+								odPoint.setY(Double.toString(point.getX()));
+								odBorderPointSet.getPoint().add(odPoint);
+							});
+							
+							odBorderGeometry.getPointSet().add(odBorderPointSet);
+							odBorder.getGeometry().add(odBorderGeometry);
 						});
 						
-						odBorderGeometry.getPointSet().add(odBorderPointSet);
-						odBorder.getGeometry().add(odBorderGeometry);
 						
 						odLane.getBorder().add(odBorder);
 						odLane.setId(Integer.toString(left.lane));
-						odLane.setUid(UUID.randomUUID().toString());
+						odLane.setUid(left.uid);
 						odLane.setDirection(Double.toString(left.distanceFromRoad));
 						odLane.setType("driving");
 						odLane.setTurnType("noTurn");
@@ -157,28 +161,31 @@ public class Converter {
 					laneSection.right.forEach(right->{
 						Lane odLane = new Lane();
 						Border odBorder = new Border();
-						Geometry odBorderGeometry = new Geometry();
-						odBorderGeometry.setLength(Double.toString(right.borderGeometry.length));
-						odBorderGeometry.setSOffset(Double.toString(right.borderGeometry.sOffset));
-						odBorderGeometry.setY(Double.toString(right.borderGeometry.x));
-						odBorderGeometry.setX(Double.toString(right.borderGeometry.y));
-						odBorderGeometry.setZ(Double.toString(right.borderGeometry.z));
 						
-						PointSet odBorderPointSet = new PointSet();
-						
-						right.borderGeometry.points().forEach(point->{
-							Point odPoint = new Point();
-							odPoint.setX(Double.toString(point.getY()));
-							odPoint.setY(Double.toString(point.getX()));
-							odBorderPointSet.getPoint().add(odPoint);
+						right.borderGeometry.forEach(border->{
+							Geometry odBorderGeometry = new Geometry();
+							odBorderGeometry.setLength(Double.toString(border.length));
+							odBorderGeometry.setSOffset(Double.toString(border.sOffset));
+							odBorderGeometry.setY(Double.toString(border.x));
+							odBorderGeometry.setX(Double.toString(border.y));
+							odBorderGeometry.setZ(Double.toString(border.z));
+							
+							PointSet odBorderPointSet = new PointSet();
+							
+							border.points().forEach(point->{
+								Point odPoint = new Point();
+								odPoint.setX(Double.toString(point.getY()));
+								odPoint.setY(Double.toString(point.getX()));
+								odBorderPointSet.getPoint().add(odPoint);
+							});
+							
+							odBorderGeometry.getPointSet().add(odBorderPointSet);
+							odBorder.getGeometry().add(odBorderGeometry);
 						});
-						
-						odBorderGeometry.getPointSet().add(odBorderPointSet);
-						odBorder.getGeometry().add(odBorderGeometry);
 						
 						odLane.getBorder().add(odBorder);
 						odLane.setId(Integer.toString(right.lane));
-						odLane.setUid(UUID.randomUUID().toString());
+						odLane.setUid(right.uid);
 						odLane.setDirection(Double.toString(right.distanceFromRoad));
 						odLane.setType("driving");
 						odLane.setTurnType("noTurn");
@@ -244,7 +251,7 @@ public class Converter {
 				odRoad.getSignals().add(odSignals);
 				odRoad.getLanes().add(odLanes);
 				odRoad.setId(road.id);
-				openDriveRoot.getLinkOrGeometryOrOutline().add(odRoad);
+				rootElements.add(odRoad);
 			});
 			
 			env.junctions.forEach(junction->{
