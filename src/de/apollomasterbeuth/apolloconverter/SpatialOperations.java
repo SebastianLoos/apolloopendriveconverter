@@ -48,6 +48,74 @@ public class SpatialOperations {
 		}
 	}
 	
+	public static LineString getPerpendicularLine(LineString lineString) {
+		Coordinate startPoint = new Coordinate(lineString.getStartPoint().getY(), lineString.getStartPoint().getX());
+		Coordinate endPoint = new Coordinate(lineString.getEndPoint().getY(), lineString.getEndPoint().getX());
+		return new GeometryFactory().createLineString(new Coordinate[] {startPoint, endPoint});
+	}
+	
+	public static LineString getConnectingLine(LineString l, Point p) {
+		Point intersection =  getClosestPointOnLine(l,p);
+		return new GeometryFactory().createLineString(new Coordinate[] { intersection.getCoordinate(), p.getCoordinate()});
+	}
+	
+	public static double distance(LineString l, Point p) {
+		Point intersection =  getClosestPointOnLine(l,p);
+		return distance(intersection, p);
+	}
+	
+	private static Point getClosestPointOnLine(LineString l, Point p) {
+		/*
+		double norm = Math.sqrt(Math.pow(l.getEndPoint().getX()-l.getStartPoint().getX(),2) + Math.pow(l.getEndPoint().getY()-l.getStartPoint().getY(), 2));
+		double u = ((p.getX() - l.getStartPoint().getX())*(l.getEndPoint().getX() - l.getStartPoint().getX()) 
+				+ (p.getY() - l.getStartPoint().getY())*(l.getEndPoint().getY() - l.getStartPoint().getY())) / norm;
+		System.out.println(u);
+		double x = l.getStartPoint().getX() + u*(l.getEndPoint().getX() - l.getStartPoint().getX());
+		double y = l.getStartPoint().getY() + u*(l.getEndPoint().getY() - l.getStartPoint().getY());
+		Point intersection =  new GeometryFactory().createPoint(new Coordinate(x,y));
+		*/
+		
+		/*
+		Point a = l.getStartPoint();
+		Point b = l.getEndPoint();
+		
+		double[] lV = new double[] {b.getX() - a.getX(), b.getY() - a.getY()};
+		double[] perp = new double[] {-lV[1], lV[0]};
+		
+		Point Q = new GeometryFactory().createPoint(new Coordinate(p.getX() + perp[0], p.getY() + perp[1]));
+		
+		double x = ((a.getX()*b.getY() - a.getY()*b.getX()) * (p.getX() - Q.getX()) - (a.getX()-b.getX())*(p.getX()*Q.getY() - p.getY()*Q.getX())) / ((a.getX() - b.getX())*(p.getY()-Q.getY()) - (a.getY() -b.getY())*(p.getY()-Q.getY())); 
+		double y = ((a.getX()*b.getY() - a.getY()*b.getX()) * (p.getY() - Q.getY()) - (a.getY()-b.getY())*(p.getX()*Q.getY() - p.getY()*Q.getX())) / ((a.getX() - b.getX())*(p.getY()-Q.getY()) - (a.getY() -b.getY())*(p.getY()-Q.getY()));
+		Point intersection =  new GeometryFactory().createPoint(new Coordinate(x,y));
+		
+		*/
+		
+		Point a = l.getStartPoint();
+		Point b = l.getEndPoint();
+		
+		double[] a_to_p = new double[] {p.getX() - a.getX(), p.getY() - a.getY()};
+		double[] a_to_b = new double[] {b.getX() - a.getX(), b.getY() - a.getY()};
+		
+		double atb2 = Math.pow(a_to_b[0], 2) + Math.pow(a_to_b[1], 2);
+		
+		double atp_dot_atb = a_to_p[0]*a_to_b[0] + a_to_p[1]*a_to_b[1];
+		
+		double maxt = (b.getX() - a.getX())/a_to_b[0];
+		double t = atp_dot_atb / atb2;
+		if (t > maxt) {
+			t = maxt;
+		}
+		if (t < 0) {
+			t = 0;
+		}
+		
+		double x = a.getX() + a_to_b[0]*t;
+		double y = a.getY() + a_to_b[1]*t;
+		Point intersection =  new GeometryFactory().createPoint(new Coordinate(x,y));
+		
+		return intersection;
+	}
+	
 	public static double distance(Point p1, Point p2) {
 		return distance(p1.getY(), p2.getY(), p1.getX(), p2.getX(), 0, 0);
 	}

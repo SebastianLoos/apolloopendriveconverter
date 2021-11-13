@@ -65,7 +65,22 @@ public class GMLDataAdder {
 				geometry.length = gmlBoundary.geometry.getLength();
 				boundary.geometry = geometry;
 				boundary.type = (SpatialOperations.getDeterminant(gmlBoundary.geometry.getCentroid(), road.geometry.geometry.getStartPoint(), road.geometry.geometry.getEndPoint())<0) ? "leftBoundary" : "rightBoundary";
+				/*
+				Boundary boundary2 = new Boundary();
+				Geometry geometry2 = new Geometry();
+				geometry2.geometry = SpatialOperations.getConnectingLine(road.geometry.geometry, gmlBoundary.geometry.getCentroid());
+				geometry2.sOffset = 0.0;
+				geometry2.x = gmlBoundary.geometry.getStartPoint().getX();
+				geometry2.y = gmlBoundary.geometry.getStartPoint().getY();
+				geometry2.z = 0.0;
+				geometry2.length = gmlBoundary.geometry.getLength();
+				boundary2.geometry = geometry2;
+				boundary2.type = (SpatialOperations.getDeterminant(gmlBoundary.geometry.getCentroid(), road.geometry.geometry.getStartPoint(), road.geometry.geometry.getEndPoint())<0) ? "leftBoundary" : "rightBoundary";
+				road.laneSections.get(0).boundaries.add(boundary2);
+				*/
+				
 				road.laneSections.get(0).boundaries.add(boundary);
+
 			}
 		}
 		long end = System.nanoTime();
@@ -78,22 +93,24 @@ public class GMLDataAdder {
 		connectLanesToRoad(gmlLanes, env).entrySet().stream().forEach(x->lanes.put(x.getKey(), x.getValue()));
 		Map<Road, Map<Integer, List<GMLLane>>> finalLanes = new HashMap<Road, Map<Integer, List<GMLLane>>>();
 		lanes.entrySet().stream().forEach(lane->{
-			System.out.println("New road with " + lane.getValue().size() + " lane sections.");
+			System.out.println("New road with " + lane.getValue().size() + " gml lanes.");
+			
 			List<List<GMLLane>> seperatedLanes = seperateLanes(lane.getValue(), 0.2);
 			List<List<GMLLane>> mergedSeperatedLanes = new ArrayList<List<GMLLane>>();
 			Map<Double, List<GMLLane>> mergedSeperatedLanesByDistA = new HashMap<Double, List<GMLLane>>();
 			Map<Double, List<GMLLane>> mergedSeperatedLanesByDistB = new HashMap<Double, List<GMLLane>>();
 			seperatedLanes.forEach(seperatedLane->{
-				List<GMLLane> mergedLanes = mergeAllLanes(seperatedLane, 0.0001);
+				//List<GMLLane> mergedLanes = mergeAllLanes(seperatedLane, 0.0001);
+				List<GMLLane> mergedLanes = seperatedLane;
 				mergedSeperatedLanes.add(mergedLanes);
 			});
 			mergedSeperatedLanes.stream().forEach(mergedSeperatedLane->{
-				System.out.println("AVG IS ");
+				//System.out.println("AVG IS ");
 				OptionalDouble avgDist = mergedSeperatedLane.stream().mapToDouble(mergesLane->SpatialOperations.distance(lane.getKey().geometry.geometry.getCentroid(), mergesLane.geometry.getCentroid())).average();
 				OptionalDouble avgPos = mergedSeperatedLane.stream().mapToDouble(mergesLane->SpatialOperations.getDeterminant(lane.getKey().geometry.geometry.getCentroid(), mergesLane.geometry.getStartPoint(), mergesLane.geometry.getEndPoint())).average();
 				if (avgDist.isPresent() && avgPos.isPresent()) {
-					System.out.println(avgDist.getAsDouble());
-					System.out.println(avgPos.getAsDouble());
+					//System.out.println(avgDist.getAsDouble());
+					//System.out.println(avgPos.getAsDouble());
 					if (avgPos.getAsDouble()>0) {
 						mergedSeperatedLanesByDistA.put(avgDist.getAsDouble(), mergedSeperatedLane);
 					}
@@ -104,11 +121,17 @@ public class GMLDataAdder {
 			});
 			Map<Integer, List<GMLLane>> sortedLanes = new HashMap<Integer, List<GMLLane>>();
 			for (int i=0; i<mergedSeperatedLanesByDistA.entrySet().size(); i++) {
-				sortedLanes.put(i, mergedSeperatedLanesByDistA.entrySet().stream().collect(Collectors.toList()).get(i).getValue());
+				List<GMLLane> lanesToAdd = mergedSeperatedLanesByDistA.entrySet().stream().collect(Collectors.toList()).get(i).getValue();
+				sortedLanes.put(i, lanesToAdd);
+				System.out.println("Adding " + lanesToAdd.size() + " to side A");
 			}
 			for (int i=0; i<mergedSeperatedLanesByDistB.entrySet().size(); i++) {
-				sortedLanes.put(-i, mergedSeperatedLanesByDistB.entrySet().stream().collect(Collectors.toList()).get(i).getValue());
+				List<GMLLane> lanesToAdd = mergedSeperatedLanesByDistB.entrySet().stream().collect(Collectors.toList()).get(i).getValue();
+				sortedLanes.put(-i, lanesToAdd);
+				System.out.println("Adding " + lanesToAdd.size() + " to side B");
 			}
+			
+			sortedLanes.put(1, lane.getValue());
 			finalLanes.put(lane.getKey(), sortedLanes);
 		});
 		
@@ -127,7 +150,7 @@ public class GMLDataAdder {
 					lane.borderType = borderType;
 					entry.getValue().forEach(gmlLane->{
 						Geometry geometry = new Geometry();
-						geometry.sOffset = 0;
+						geometry.sOffset = gmlLane.distanceToRoad;
 						geometry.length = SpatialOperations.distance(gmlLane.geometry.getStartPoint(), gmlLane.geometry.getEndPoint());
 						geometry.x = gmlLane.geometry.getStartPoint().getX();
 						geometry.y = gmlLane.geometry.getStartPoint().getY();
@@ -305,12 +328,14 @@ public class GMLDataAdder {
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
 				gmlLane.connectedRoad = road;
-				gmlLane.distanceToRoad = SpatialOperations.distance(gmlLane.geometry.getCentroid(), road.geometry.geometry.getCentroid());
+				gmlLane.distanceToRoad = SpatialOperations.distance(road.geometry.geometry, gmlLane.geometry.getCentroid());
 				if (lanes.containsKey(road)) {
 					lanes.get(road).add(gmlLane);
+					//lanes.get(road).add(new GMLLane(SpatialOperations.getConnectingLine(road.geometry.geometry, gmlLane.geometry.getCentroid()).getCoordinates()));
 				} else {
 					List<GMLLane> laneList = new ArrayList<GMLLane>();
 					laneList.add(gmlLane);
+					//laneList.add(new GMLLane(SpatialOperations.getConnectingLine(road.geometry.geometry, gmlLane.geometry.getCentroid()).getCoordinates()));
 					lanes.put(road, laneList);
 				}
 			}
@@ -326,24 +351,26 @@ public class GMLDataAdder {
 		lanes.sort((a,b) -> Double.compare(a.distanceToRoad, b.distanceToRoad));
 		
 		List<Double> difference = new ArrayList<Double>();
-		for (int i=0; i<lanes.size()-2; i++) {
+		for (int i=0; i<=lanes.size()-2; i++) {
 			difference.add((lanes.get(i).distanceToRoad-lanes.get(i+1).distanceToRoad)/lanes.get(i).distanceToRoad);
 		}
-		
+		System.out.println("Lane has " + difference.size() + " difference values.");
 		List<List<GMLLane>> seperatedLanes = new ArrayList<List<GMLLane>>();
 		List<GMLLane> currentLaneList = new ArrayList<GMLLane>();
 		currentLaneList.add(lanes.get(0));
 		for (int i=0; i<difference.size(); i++) {
 			double diff = Math.abs(difference.get(i));
 			if (diff >= thresholdPercentage) {
+				System.out.println("Diff of " + diff + ". Added " + currentLaneList.size() + " to new lane.");
 				seperatedLanes.add(currentLaneList);
 				currentLaneList = new ArrayList<GMLLane>();
 			}
 			currentLaneList.add(lanes.get(i+1));
 		}
+		System.out.println("Added " + currentLaneList.size() + " to new lane.");
 		seperatedLanes.add(currentLaneList);
 		
-		System.out.println("Lane split into " + seperatedLanes.size() + " lanes.");
+		System.out.println("Lane split into " + seperatedLanes.size() + " lanes with " + seperatedLanes.stream().mapToInt(x->x.size()).sum() + " parts.");
 		return seperatedLanes;
 	}
 	
@@ -414,10 +441,11 @@ public class GMLDataAdder {
 	
 	private static Optional<Road> getNearestRoad(LineString lineString, Environment env, double bufferSize, boolean ignoreParallelIfOtherwiseEmpty) {
 		List<Road> nearbyRoads = env.roads.parallelStream().filter(road->road.geometry.geometry.buffer(bufferSize).intersects(lineString)).collect(Collectors.toList());
+		//List<Road> nearbyRoads = env.roads;
 		List<Road> parallelRoads = nearbyRoads.parallelStream().filter(road->SpatialOperations.checkParallel(lineString, road.geometry.geometry)).collect(Collectors.toList());
-		Optional<Road> roadsOptional = parallelRoads.parallelStream().min((road1, road2)->Double.compare(road1.geometry.geometry.distance(lineString),road2.geometry.geometry.distance(lineString)));
+		Optional<Road> roadsOptional = parallelRoads.parallelStream().min((road1, road2)->Double.compare(SpatialOperations.distance(road1.geometry.geometry, lineString.getCentroid()),SpatialOperations.distance(road2.geometry.geometry, lineString.getCentroid())));
 		if (!roadsOptional.isPresent() && ignoreParallelIfOtherwiseEmpty) {
-			return nearbyRoads.parallelStream().min((road1, road2)->Double.compare(road1.geometry.geometry.distance(lineString),road2.geometry.geometry.distance(lineString)));
+			return nearbyRoads.parallelStream().min((road1, road2)->Double.compare(SpatialOperations.distance(road1.geometry.geometry, lineString.getCentroid()),SpatialOperations.distance(road2.geometry.geometry, lineString.getCentroid())));
 		} else {
 			return roadsOptional;
 		}

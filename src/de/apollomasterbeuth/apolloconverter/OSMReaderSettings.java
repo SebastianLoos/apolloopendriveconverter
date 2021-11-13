@@ -5,5 +5,7 @@ public class OSMReaderSettings {
 	public boolean convertTrafficLights;
 	
 	public boolean highwaysAsRoadGeometry;
+	
+	public String[] highwayTags;
 
 }
