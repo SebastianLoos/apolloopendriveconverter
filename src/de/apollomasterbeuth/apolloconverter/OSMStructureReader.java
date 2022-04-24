@@ -16,8 +16,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 
-import com.google.common.collect.ImmutableList;
-
+import de.apollomasterbeuth.apolloconverter.osm.Network;
 import de.apollomasterbeuth.apolloconverter.osm.Node;
 import de.apollomasterbeuth.apolloconverter.osm.Way;
 import de.apollomasterbeuth.apolloconverter.osm.WayNode;
@@ -57,35 +56,49 @@ public class OSMStructureReader {
 		try {
 			OsmElement root = readOSMFile(filename);
 			
-			List<Way> roadWays = getRoadWays(root.getWayElements());
-			log.log("Roads in OSM file: " + roadWays.size());
-			List<WayNode> roadNodes = getRoadNodes(root.getNodeElements(), roadWays);
-			log.log("Nodes contained in the roads: " + roadNodes.size());
+			Network network = calculateNetwork(root.getWayElements(), root.getNodeElements());
+			log.log("Roads in OSM file: " + network.roadWays.size());
+			log.log("Nodes contained in the roads: " + network.roadNodes.size());
 			
-			splitRoads(roadNodes,roadWays);
-			log.log("Roads after split: " + roadWays.size());
-
-			List<Node> trafficLightNodes = getTrafficLightNodes(root.getNodeElements());
-			
-			List<de.apollomasterbeuth.apolloconverter.osm.Road> roads = getOSMRoads(roadNodes, roadWays);
-			
-			
-			environment.junctions = getJunctions(roadNodes, 0.0001);
-			log.log("Junctions: " + environment.junctions.size());
-			
-			environment.roads.addAll(getRoads(roads, trafficLightNodes));
-			
-			environment.roads.forEach(road->{
-				addLinkToRoad(road, roads, environment.roads);
-			});	
+			return createEnvironment(network, settings);
 		}
 		catch(Exception e) {
 			log.log("Error while creating environment:");
-			log.log(e);
+			e.printStackTrace();
 		}
 		
 		return environment;
 
+	}
+	
+	/**
+	 * Creates a new road network environment from a given OSM road network.
+	 * @param network The OSM network to be incorporated into the environment.
+	 * @param settings The settings to be used during the creation.
+	 * @return A road network environment including the OSM road network.
+	 */
+	public static Environment createEnvironment(Network network, OSMReaderSettings settings) {
+		Environment environment = new Environment();
+		
+		try {
+			splitRoads(network.roadNodes, network.roadWays);
+			log.log("Roads after split: " + network.roadWays.size());
+			
+			environment.junctions = getJunctions(network.roadNodes, 0.0001);
+			log.log("Junctions: " + environment.junctions.size());
+			
+			environment.roads.addAll(getRoads(network.roadWays, network.trafficLightNodes));
+			
+			environment.roads.forEach(road->{
+				addLinkToRoad(road, network.roadWays, environment.roads);
+			});	
+		}
+		catch(Exception e) {
+			log.log("Error while creating environment:");
+			e.printStackTrace();
+		}
+		
+		return environment;
 	}
 	
 	/**
@@ -102,8 +115,14 @@ public class OSMStructureReader {
 		return OsmUnmarshaller.unmarshal(inputStream);
 	}
 	
-	private static void addLinkToRoad(Road road, List<de.apollomasterbeuth.apolloconverter.osm.Road> osmRoads, List<Road> roads) {
-		osmRoads.stream().filter(x->Long.toString(x.way.id).equals(road.id)).findFirst().ifPresent(way->{
+	/**
+	 * Links a road to other roads based on the links from the OSM way.
+	 * @param road Road to add the links to.
+	 * @param osmRoads Collection of OSM ways to get the links from.
+	 * @param roads Collection of roads to select the roads to link the road to.
+	 */
+	private static void addLinkToRoad(Road road, Collection<Way> osmRoads, List<Road> roads) {
+		osmRoads.stream().filter(x->Long.toString(x.id).equals(road.id)).findFirst().ifPresent(way->{
 			way.getStart().links.forEach((k,v)->{
 				v.forEach(linkedWay->{
 					if (!Long.toString(linkedWay.id).equals(road.id)) {
@@ -133,7 +152,8 @@ public class OSMStructureReader {
 		});
 	}
 	
-	private static List<Junction> getJunctions(List<WayNode> nodes, double junctionAreaSize){
+	
+	private static List<Junction> getJunctions(Collection<WayNode> nodes, double junctionAreaSize){
 		List<Junction> junctions = new ArrayList<Junction>();
 		nodes.stream().filter(x->x.links.entrySet().stream().map(y->y.getValue().size()).reduce(0, (a, b) -> a+b) > 1).forEach(node->{
 			Junction junction = new Junction();
@@ -149,7 +169,7 @@ public class OSMStructureReader {
 		return junctions;
 	}
 	
-	private static List<Node> getNodesOnWay(Road road, List<Node> nodes){
+	private static List<Node> getNodesOnWay(Road road, Collection<Node> nodes){
 		List<Node> nodesOnWay = new ArrayList<Node>();
 		
 		org.locationtech.jts.geom.Geometry bufferZone = road.geometry.geometry.buffer(0.00002);
@@ -163,63 +183,12 @@ public class OSMStructureReader {
 		return nodesOnWay;
 	}
 	
-	private static List<de.apollomasterbeuth.apolloconverter.osm.Road> getOSMRoads(List<WayNode> roadNodes, List<Way> roadWays){
-		List<de.apollomasterbeuth.apolloconverter.osm.Road> roads = new ArrayList<de.apollomasterbeuth.apolloconverter.osm.Road>();
-		roadWays.forEach(roadWay->{
-			List<WayNode> nodes = new ArrayList<WayNode>();
-			for (long nodeID : roadWay.nodeIDs) {
-				Optional<WayNode> wayNodeOptional = roadNodes.stream().filter(x->x.id==nodeID).findFirst();
-				if (wayNodeOptional.isPresent()) {
-					nodes.add(wayNodeOptional.get());
-				} else {
-					System.out.println(nodeID + " not found");
-				}
-			}
-			//System.out.println(roadWay.id + ": Found " +nodes.size() + " nodes of " + roadWay.nodeIDs.length);
-			de.apollomasterbeuth.apolloconverter.osm.Road road = new de.apollomasterbeuth.apolloconverter.osm.Road(roadWay, nodes.toArray(new WayNode[0]));
-			roads.add(road);
-		});
-		return roads;
-	}
-	
-	/**
-	 * Gets all OSM nodes from a collection of OSM nodes that are contained in a collection of ways.
-	 * @param nodes a collection of nodes to get the subset of nodes from.
-	 * @param ways a collection of ways the nodes in the resulting collection should be part of.
-	 * @return a collection of nodes connected to their 
-	 */
-	private static List<WayNode> getRoadNodes(Collection<NodeElement> nodes, Collection<Way> ways){
-		List<WayNode> roadNodes = new ArrayList<WayNode>();
-		
-		ways.forEach(way->{
-			for(int i = 0; i< way.nodeIDs.length; i++) {
-				long currentId = way.nodeIDs[i];
-				Optional<WayNode> nodeMatch = roadNodes.stream().filter(x -> x.id == currentId).findFirst();
-				WayNode node = nodeMatch.isPresent() ? nodeMatch.get() : getWayNode(currentId, nodes);
-				node.ways.add(way);
-
-				if (!nodeMatch.isPresent()) {
-					roadNodes.add(node);
-				}
-				
-				if (i==0) {
-					node.addLink(LinkDirection.STARTING, way);
-				}
-				if (i==way.nodeIDs.length-1) {
-					node.addLink(LinkDirection.ENDING, way);
-				}
-			}
-		});
-		
-		return roadNodes;
-	}
-	
-	private static List<Road> getRoads(List<de.apollomasterbeuth.apolloconverter.osm.Road> osmRoads, List<Node> trafficLightNodes){
+	private static List<Road> getRoads(Collection<Way> osmRoads, Collection<Node> trafficLightNodes){
 		List<Road> roads = new ArrayList<Road>();
 		
 		osmRoads.forEach(osmRoad->{			
 			Road road = new Road();
-			road.id = Long.toString(osmRoad.way.id);
+			road.id = Long.toString(osmRoad.id);
 			
 			Stream<Point> points = Arrays.stream(osmRoad.nodes).map(x->x.geometry);
 			LineString lineString = new GeometryFactory().createLineString(points.map(x->new Coordinate(x.getX(), x.getY())).toArray(Coordinate[]::new));
@@ -247,7 +216,7 @@ public class OSMStructureReader {
 			center.borderType = borderType;
 			center.geometry = geometry;
 			laneSection.center = center;
-			laneSection.singleSide = osmRoad.way.oneway;
+			laneSection.singleSide = osmRoad.oneway;
 			road.laneSections.add(laneSection);
 			
 			getNodesOnWay(road, trafficLightNodes).forEach(node->{
@@ -270,30 +239,57 @@ public class OSMStructureReader {
 	}
 	
 	/**
-	 * Gets all OSM ways considered to be a road from a list of OSM ways.
-	 * @param wayElements A collection of OSM ways to select the roads from.
-	 * @return A list of OSM ways considered to be roads.
+	 * Calculates a road network from OSM elements.
+	 * @param wayElements OSM Way elements.
+	 * @param nodeElements OSM Node elements.
+	 * @return A network consisting of the OSM elements.
 	 */
-	private static List<Way> getRoadWays(Collection<WayElement> wayElements){
+	private static Network calculateNetwork(Collection<WayElement> wayElements, Collection<NodeElement> nodeElements){
 		List<Way> roadWays = new ArrayList<Way>();
-		wayElements.forEach(way->{
-			if (isWayRoad(way)) {
-				Way road = new Way();
-				List<Long> waysTemp = new ArrayList<Long>(); 
-				way.getNdElements().forEach(node->{
-					waysTemp.add(node.getReference());
-				});
-				road.nodeIDs = waysTemp.stream().mapToLong(l -> l).toArray();
-				road.id = way.getID();
-				road.type = getWayType(way);
-				road.oneway = way.isOneWay();
-				roadWays.add(road);
+		List<WayNode> wayNodes = new ArrayList<WayNode>();
+		List<Node> trafficLightNodes = getTrafficLightNodes(nodeElements);
+		
+		wayElements.forEach(wayElement->{
+			if (isWayRoad(wayElement)) {
+				Way way = new Way();
+				List<WayNode> waysTemp = new ArrayList<WayNode>();
+				Long[] nodeIDs = wayElement.getNdElements().stream().map(ndElement->ndElement.getReference()).toArray(Long[]::new);
+				
+				for(int i = 0; i< nodeIDs.length; i++) {
+					long currentId = nodeIDs[i];
+					Optional<WayNode> nodeMatch = wayNodes.stream().filter(x -> x.id == currentId).findFirst();
+					WayNode node = nodeMatch.isPresent() ? nodeMatch.get() : getWayNode(currentId, nodeElements);
+					node.ways.add(way);
+
+					if (!nodeMatch.isPresent()) {
+						wayNodes.add(node);
+					}
+					
+					if (i==0) {
+						node.addLink(LinkDirection.STARTING, way);
+					}
+					if (i==wayElement.getNdElements().size()-1) {
+						node.addLink(LinkDirection.ENDING, way);
+					}
+					
+					waysTemp.add(node);
+				}
+				way.nodes = waysTemp.toArray(new WayNode[0]);
+				way.id = wayElement.getID();
+				way.type = getWayType(wayElement);
+				way.oneway = wayElement.isOneWay();
+				roadWays.add(way);
 			}
 		});
-		return roadWays;
+		
+		Network network = new Network();
+		network.roadWays = roadWays;
+		network.roadNodes = wayNodes;
+		network.trafficLightNodes = trafficLightNodes;
+		return network;
 	}
 	
-	private static List<Node> getTrafficLightNodes(ImmutableList<NodeElement> nodeElements){
+	private static List<Node> getTrafficLightNodes(Collection<NodeElement> nodeElements){
 		List<Node> trafficLightNodes = new ArrayList<Node>();
 		nodeElements.forEach(node->{
 			node.getTags().forEach((k,v)->{
@@ -367,7 +363,7 @@ public class OSMStructureReader {
 	 * @param roadNodes
 	 * @param roadWays
 	 */
-	private static void splitRoads(List<WayNode> roadNodes, List<Way> roadWays) {
+	private static void splitRoads(Collection<WayNode> roadNodes, Collection<Way> roadWays) {
 		// Get all WayNodes that are contained in more than one Way.
 		for (WayNode wayNode : roadNodes.stream().filter(x->x.ways.size()>1).collect(Collectors.toList())){
 			//Loop through the ways the node is contained in.
@@ -375,7 +371,7 @@ public class OSMStructureReader {
 				Way way = wayNode.ways.get(i);
 				int nodePosition = way.getNodePosition(wayNode.id);
 				//Only split the way if the node is neither the start or end geometry.
-				if ((nodePosition!=0)&&(nodePosition!=way.nodeIDs.length-1)) {
+				if ((nodePosition!=0)&&(nodePosition!=way.nodes.length-1)) {
 					
 					// Create new Way with random id
 					Way newWay = new Way();
@@ -388,35 +384,32 @@ public class OSMStructureReader {
 					
 					// The length of the Array to store the Node IDs of the new Way is equal to difference between the amount of Node IDs in the old Way 
 					// and the position the split occurred.
-					newWay.nodeIDs = new long[way.nodeIDs.length-nodePosition];
+					newWay.nodes = new WayNode[way.nodes.length-nodePosition];
 					
 					// Array to store the new Node IDs of the old way. The length is equal to the position of the split plus one.
-					long[] nodeIDsTemp = new long[nodePosition+1];
+					WayNode[] nodeIDsTemp = new WayNode[nodePosition+1];
 					
 					// Adding the Node IDs up to and including the split to the new Node ID array of the old way 
 					for (int k=0; k<nodeIDsTemp.length; k++) {
-						nodeIDsTemp[k] = way.nodeIDs[k];
+						nodeIDsTemp[k] = way.nodes[k];
 					}
 					
 					
-					for (int k=0; k<newWay.nodeIDs.length; k++) {
-						long id = way.nodeIDs[nodePosition+k];
+					for (int k=0; k<newWay.nodes.length; k++) {						
 						int counter = k;
 						
 						// Adding the new Node IDs to the new way.
-						newWay.nodeIDs[k] = way.nodeIDs[nodePosition+k];
+						newWay.nodes[k] = way.nodes[nodePosition+k];
 						
 						// 
-						roadNodes.stream().filter(x->x.id==id).forEach(node->{
-							node.ways.add(newWay);
-							if (counter!=0) {
-								node.ways.remove(way);
-								//System.out.println("Removed way " + way.id + " from node " + node.id);
-							}
-						});
+						way.nodes[nodePosition+k].ways.add(newWay);
+						if (counter!= 0) {
+							way.nodes[nodePosition+k].ways.remove(way);
+						}
+						
 					}
 					
-					way.nodeIDs = nodeIDsTemp;
+					way.nodes = nodeIDsTemp;
 					
 					roadWays.add(newWay);
 				}

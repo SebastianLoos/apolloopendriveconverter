@@ -2,19 +2,14 @@ package de.apollomasterbeuth.apolloconverter;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 import org.locationtech.jts.geom.Coordinate;
@@ -32,7 +27,6 @@ import de.apollomasterbeuth.apolloconverter.structure.Boundary;
 import de.apollomasterbeuth.apolloconverter.structure.Environment;
 import de.apollomasterbeuth.apolloconverter.structure.Geometry;
 import de.apollomasterbeuth.apolloconverter.structure.Lane;
-import de.apollomasterbeuth.apolloconverter.structure.LaneLink;
 import de.apollomasterbeuth.apolloconverter.structure.Road;
 import de.apollomasterbeuth.logger.Log;
 
@@ -54,7 +48,6 @@ public class GMLDataAdder {
 			Optional<Road> roadOptional = getNearestRoad(gmlBoundary.geometry, env, 0.0003, true);
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
-				//log.log(road.id + " is the nearest " + count + "/" + gmlBoundaries.size());
 				Boundary boundary = new Boundary();
 				Geometry geometry = new Geometry();
 				geometry.geometry = gmlBoundary.geometry;

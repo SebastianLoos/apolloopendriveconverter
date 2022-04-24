@@ -4,27 +4,32 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXB;
 
 import org.apache.lucene.util.SloppyMath;
+import org.cts.CRSFactory;
+import org.cts.IllegalCoordinateException;
+import org.cts.crs.CoordinateReferenceSystem;
+import org.cts.crs.GeodeticCRS;
+import org.cts.op.CoordinateOperation;
+import org.cts.op.CoordinateOperationException;
+import org.cts.op.CoordinateOperationFactory;
+import org.cts.registry.EPSGRegistry;
+import org.cts.registry.RegistryManager;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Point;
-import org.osgeo.proj4j.BasicCoordinateTransform;
-import org.osgeo.proj4j.CRSFactory;
-import org.osgeo.proj4j.CoordinateReferenceSystem;
-import org.osgeo.proj4j.ProjCoordinate;
 
 import de.apollomasterbeuth.apolloconverter.gml.GMLBoundary;
 import de.apollomasterbeuth.apolloconverter.gml.GMLData;
-import de.apollomasterbeuth.apolloconverter.gml.GMLGeometry;
 import de.apollomasterbeuth.apolloconverter.gml.GMLLane;
 import de.apollomasterbeuth.logger.Log;
 import de.berlin.broker.SBordstein;
 import de.berlin.broker.SFahrbahnmarkierungLinie;
 import net.opengis.wfs._2.FeatureCollection;
-import net.opengis.wfs._2.FeatureCollection.Member;
 
 public class GMLStructureReader {
 	private static Log log = new Log(GMLStructureReader.class.getName());
@@ -99,7 +104,6 @@ public class GMLStructureReader {
 	
 	
 	private static List<GMLBoundary> getBoundary(SBordstein boundary, int epsg){
-		
 		List<GMLBoundary> boundaries = new ArrayList<GMLBoundary>();
 		boundary.getGeom().forEach(geometry->{
 			geometry.getMultiCurve().getCurveMember().forEach(curveMember->{
@@ -107,32 +111,18 @@ public class GMLStructureReader {
 					gmlLineString.getPosList().forEach(pos->{
 						String coordinateString = pos.getValue();
 						String[] coordinatesStrings = coordinateString.split(" ");
-						Double[] coordinates = new Double[coordinatesStrings.length];
-						
-						double length = Double.parseDouble(boundary.getLaenge());
+						Double[] coordinateValues = new Double[coordinatesStrings.length];
+						List<Coordinate> coordinates = new ArrayList<Coordinate>();
 						
 						for (int j=0; j<coordinatesStrings.length; j++) {
-							coordinates[j] = Double.parseDouble(coordinatesStrings[j]);
-						}
-						List<ProjCoordinate> srcCoordinates = new ArrayList<ProjCoordinate>();
-						List<ProjCoordinate> dstCoordinates = new ArrayList<ProjCoordinate>();
-						
-						for (int j=0; j<Math.floor(coordinates.length/2d); j++) {
-							srcCoordinates.add(new ProjCoordinate(coordinates[j*2], coordinates[j*2+1]));
+							coordinateValues[j] = Double.parseDouble(coordinatesStrings[j]);
 						}
 						
-						CRSFactory factory = new CRSFactory();
-						CoordinateReferenceSystem srcCrs = factory.createFromName("EPSG:"+epsg);
-						CoordinateReferenceSystem dstCrs = factory.createFromName("EPSG:4326");
-						BasicCoordinateTransform transform = new BasicCoordinateTransform(srcCrs, dstCrs);
+						for (int j=0; j<Math.floor(coordinateValues.length/2d); j++) {
+							coordinates.add(new Coordinate(coordinateValues[j*2], coordinateValues[j*2+1]));
+						}
 						
-						srcCoordinates.forEach(x->{
-							ProjCoordinate dstCoordinate = new ProjCoordinate();
-							transform.transform(x, dstCoordinate);
-							dstCoordinates.add(dstCoordinate);
-						});
-						
-						Coordinate[] coordinateArray = dstCoordinates.stream().map(x->new Coordinate(x.y, x.x)).toArray(Coordinate[]::new);
+						Coordinate[] coordinateArray = transformCoordinates(coordinates.stream().toArray(Coordinate[]::new), epsg);
 						
 						List<Coordinate[]> splitCoordinateArrays = splitLineString(coordinateArray, 2d);
 						
@@ -148,7 +138,6 @@ public class GMLStructureReader {
 	}
 	
 	private static List<GMLLane> getLanes(SFahrbahnmarkierungLinie lane, int epsg){
-		
 		List<GMLLane> lanes = new ArrayList<GMLLane>();
 		if (Arrays.stream(nonLaneMarkings).anyMatch(x->x.equals(lane.getFbl()))){
 			return lanes;
@@ -159,32 +148,18 @@ public class GMLStructureReader {
 					gmlLineString.getPosList().forEach(pos->{
 						String coordinateString = pos.getValue();
 						String[] coordinatesStrings = coordinateString.split(" ");
-						Double[] coordinates = new Double[coordinatesStrings.length];
-						
-						double length = Double.parseDouble(lane.getLaenge());
+						Double[] coordinateValues = new Double[coordinatesStrings.length];
+						List<Coordinate> coordinates = new ArrayList<Coordinate>();
 						
 						for (int j=0; j<coordinatesStrings.length; j++) {
-							coordinates[j] = Double.parseDouble(coordinatesStrings[j]);
-						}
-						List<ProjCoordinate> srcCoordinates = new ArrayList<ProjCoordinate>();
-						List<ProjCoordinate> dstCoordinates = new ArrayList<ProjCoordinate>();
-						
-						for (int j=0; j<Math.floor(coordinates.length/2d); j++) {
-							srcCoordinates.add(new ProjCoordinate(coordinates[j*2], coordinates[j*2+1]));
+							coordinateValues[j] = Double.parseDouble(coordinatesStrings[j]);
 						}
 						
-						CRSFactory factory = new CRSFactory();
-						CoordinateReferenceSystem srcCrs = factory.createFromName("EPSG:"+epsg);
-						CoordinateReferenceSystem dstCrs = factory.createFromName("EPSG:4326");
-						BasicCoordinateTransform transform = new BasicCoordinateTransform(srcCrs, dstCrs);
+						for (int j=0; j<Math.floor(coordinateValues.length/2d); j++) {
+							coordinates.add(new Coordinate(coordinateValues[j*2], coordinateValues[j*2+1]));
+						}
 						
-						srcCoordinates.forEach(x->{
-							ProjCoordinate dstCoordinate = new ProjCoordinate();
-							transform.transform(x, dstCoordinate);
-							dstCoordinates.add(dstCoordinate);
-						});
-						
-						Coordinate[] coordinateArray = dstCoordinates.stream().map(x->new Coordinate(x.y, x.x)).toArray(Coordinate[]::new);
+						Coordinate[] coordinateArray = transformCoordinates(coordinates.stream().toArray(Coordinate[]::new), epsg);
 						
 						List<Coordinate[]> splitCoordinateArrays = splitLineString(coordinateArray, 2d);
 						
@@ -222,5 +197,38 @@ public class GMLStructureReader {
 			}
 		}
 		return coordinateArrayList;
+	}
+	
+	private static Coordinate[] transformCoordinates(Coordinate[] coordinates, int epsg) {
+		List<double[]> dstCoordinates = new ArrayList<double[]>();
+		
+		try {
+			CRSFactory factory = new CRSFactory();
+			RegistryManager rm = factory.getRegistryManager();
+			rm.addRegistry(new EPSGRegistry());
+			GeodeticCRS srcCrs = (GeodeticCRS)factory.getCRS("EPSG:"+epsg);
+			GeodeticCRS dstCrs = (GeodeticCRS)factory.getCRS("EPSG:4326");
+			Set<CoordinateOperation> coordOps = CoordinateOperationFactory.createCoordinateOperations(srcCrs, dstCrs);
+			
+			Stream.of(coordinates).forEach(x->{
+				Optional<CoordinateOperation> op = coordOps.stream().findFirst();
+				if (op.isPresent()) {
+					try {
+					    double[] coord = op.get().transform(new double[] {x.x, x.y});
+						dstCoordinates.add(coord);
+					} catch (IllegalCoordinateException | CoordinateOperationException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			
+			Coordinate[] coordinateArray = dstCoordinates.stream().map(x->new Coordinate(x[1], x[0])).toArray(Coordinate[]::new);
+			
+			return coordinateArray;
+		} catch(Exception e) {
+			e.printStackTrace();
+			return new Coordinate[0];
+		}
+		
 	}
 }

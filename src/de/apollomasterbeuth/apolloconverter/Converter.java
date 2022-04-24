@@ -2,25 +2,12 @@ package de.apollomasterbeuth.apolloconverter;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Geometry;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Geometry.PointSet;
 import org.openstreetmap.josm.plugins.apolloopendrive.xml.Geometry.PointSet.Point;
