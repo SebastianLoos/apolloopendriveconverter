@@ -17,10 +17,15 @@ public class MainApplication {
 			Environment env = OSMStructureReader.createEnvironment(args[0], settings);
 			for (int i=2;i<args.length;i++) {
 				GMLData data = GMLStructureReader.read(args[i], 25833);
-				GMLDataAdder.addData(data, env);
+				
+				GMLDataAdderConfig dataAdderConfig = new GMLDataAdderConfig();
+				dataAdderConfig.nearestRoadBufferSize = 0.0003;
+				dataAdderConfig.mergeBoundariesBufferSize = 0.0000125;
+				dataAdderConfig.separateLaneThreshold = 0.2;
+				
+				GMLDataAdder.addData(data, env, dataAdderConfig);
 			}
-			Converter conv = new Converter(args[1]);
-			conv.convertOSM(env);
+			Converter.convertOSM(env, args[1]);
 		}
 	}
 

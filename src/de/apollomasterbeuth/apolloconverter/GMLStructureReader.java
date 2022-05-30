@@ -14,7 +14,6 @@ import javax.xml.bind.JAXB;
 import org.apache.lucene.util.SloppyMath;
 import org.cts.CRSFactory;
 import org.cts.IllegalCoordinateException;
-import org.cts.crs.CoordinateReferenceSystem;
 import org.cts.crs.GeodeticCRS;
 import org.cts.op.CoordinateOperation;
 import org.cts.op.CoordinateOperationException;

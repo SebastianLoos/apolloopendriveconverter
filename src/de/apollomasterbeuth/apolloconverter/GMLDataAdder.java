@@ -33,19 +33,22 @@ import de.apollomasterbeuth.logger.Log;
 public class GMLDataAdder {
 	private static Log log = new Log(GMLDataAdder.class.getName());
 	
-	public static void addData(GMLData data, Environment env) {
-		addBoundaries(data.boundaries, env);
-		addLanes(data.lanes, env);
-		mergeBoundaries(env, 0.0000125);
+	public static void addData(GMLData data, Environment env, GMLDataAdderConfig config) {
+		addBoundaries(data.boundaries, env, config.nearestRoadBufferSize);
+		addLanes(data.lanes, env, config.separateLaneThreshold, config.nearestRoadBufferSize);
+		mergeBoundaries(env, config.mergeBoundariesBufferSize);
 	}
 	
-	private static void addBoundaries(List<GMLBoundary> gmlBoundaries, Environment env) {
-		log.log("Adding boundaries from " + gmlBoundaries.size() + " lines");
+	/**
+	 * Adds GML data of street boundaries to the environment.
+	 * @param gmlBoundaries The GML data containing data of the street boundaries.
+	 * @param env The environment to add the data to.
+	 */
+	private static void addBoundaries(List<GMLBoundary> gmlBoundaries, Environment env, double nearestRoadBufferSize) {
+		log.log("Adding " + gmlBoundaries.size() + " boundary geometries:");
 		long start = System.nanoTime();
-		int count = 0;
 		for (GMLBoundary gmlBoundary : gmlBoundaries){
-			count++;
-			Optional<Road> roadOptional = getNearestRoad(gmlBoundary.geometry, env, 0.0003, true);
+			Optional<Road> roadOptional = getNearestRoad(gmlBoundary.geometry, env, nearestRoadBufferSize, true);
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
 				Boundary boundary = new Boundary();
@@ -81,14 +84,16 @@ public class GMLDataAdder {
 		log.log("Boundaries added in " + duration + " ms");
 	}
 	
-	private static void addLanes(List<GMLLane> gmlLanes, Environment env) {
+	private static void addLanes(List<GMLLane> gmlLanes, Environment env, double separateLaneThreshold, double nearestRoadBufferSize) {
+		log.log("Adding " + gmlLanes.size() + " lane geometries:");
+		long start = System.nanoTime();
 		Map<Road, List<GMLLane>> lanes = new HashMap<Road, List<GMLLane>>();
-		connectLanesToRoad(gmlLanes, env).entrySet().stream().forEach(x->lanes.put(x.getKey(), x.getValue()));
+		connectLanesToRoad(gmlLanes, env, nearestRoadBufferSize).entrySet().stream().forEach(x->lanes.put(x.getKey(), x.getValue()));
 		Map<Road, Map<Integer, List<GMLLane>>> finalLanes = new HashMap<Road, Map<Integer, List<GMLLane>>>();
 		lanes.entrySet().stream().forEach(lane->{
 			System.out.println("New road with " + lane.getValue().size() + " gml lanes.");
 			
-			List<List<GMLLane>> seperatedLanes = seperateLanes(lane.getValue(), 0.2);
+			List<List<GMLLane>> seperatedLanes = seperateLanes(lane.getValue(), separateLaneThreshold);
 			List<List<GMLLane>> mergedSeperatedLanes = new ArrayList<List<GMLLane>>();
 			Map<Double, List<GMLLane>> mergedSeperatedLanesByDistA = new HashMap<Double, List<GMLLane>>();
 			Map<Double, List<GMLLane>> mergedSeperatedLanesByDistB = new HashMap<Double, List<GMLLane>>();
@@ -98,12 +103,9 @@ public class GMLDataAdder {
 				mergedSeperatedLanes.add(mergedLanes);
 			});
 			mergedSeperatedLanes.stream().forEach(mergedSeperatedLane->{
-				//System.out.println("AVG IS ");
 				OptionalDouble avgDist = mergedSeperatedLane.stream().mapToDouble(mergesLane->SpatialOperations.distance(lane.getKey().geometry.geometry.getCentroid(), mergesLane.geometry.getCentroid())).average();
 				OptionalDouble avgPos = mergedSeperatedLane.stream().mapToDouble(mergesLane->SpatialOperations.getDeterminant(lane.getKey().geometry.geometry.getCentroid(), mergesLane.geometry.getStartPoint(), mergesLane.geometry.getEndPoint())).average();
 				if (avgDist.isPresent() && avgPos.isPresent()) {
-					//System.out.println(avgDist.getAsDouble());
-					//System.out.println(avgPos.getAsDouble());
 					if (avgPos.getAsDouble()>0) {
 						mergedSeperatedLanesByDistA.put(avgDist.getAsDouble(), mergedSeperatedLane);
 					}
@@ -164,6 +166,9 @@ public class GMLDataAdder {
 				});
 			}
 		});
+		long end = System.nanoTime();
+		long duration = (end - start)/1000000L;
+		log.log("Lanes added in " + duration + " ms");
 	}
 	
 	private static void mergeBoundaries(Environment env, double bufferSize) {
@@ -267,11 +272,9 @@ public class GMLDataAdder {
 						endpoints.add(new Endpoint(boundary.geometry.geometry.getEndPoint(), boundary, false));
 					});
 					
-					int count = 0;
 					List<Connection> boundaryConnections = new ArrayList<Connection>();
 					
 					for (Boundary boundary : list){
-						count++;
 						Optional<Endpoint> neighbourStart = endpoints.stream().filter(x->x.boundary!=boundary)
 								.filter(x->x.point.isWithinDistance(boundary.geometry.geometry.getStartPoint(), bufferSize)).min((e1, e2)->
 							Double.compare(boundary.geometry.geometry.getStartPoint().distance(e1.point), 
@@ -284,9 +287,7 @@ public class GMLDataAdder {
 						boundaryConnections.add(new Connection(boundary, neighbourStart, neighbourEnd));
 					}
 					
-					int newBoundaryCount = 0;
 					while (boundaryConnections.stream().anyMatch(x->!x.processed)) {
-						newBoundaryCount++;
 						Connection connection = boundaryConnections.stream().filter(x->!x.processed).findFirst().get();
 						Deque<Point> points = connection.initiateProcessing(boundaryConnections);
 						Boundary newBoundary = new Boundary();
@@ -310,14 +311,14 @@ public class GMLDataAdder {
 		log.log("Boundaries merged");
 	}
 	
-	private static Map<Road,List<GMLLane>> connectLanesToRoad(List<GMLLane> gmlLanes, Environment env) {
+	private static Map<Road,List<GMLLane>> connectLanesToRoad(List<GMLLane> gmlLanes, Environment env, double nearestRoadBufferSize) {
 		log.log("Getting nearest road for " + gmlLanes.size() + " lanes");
 		
 		Map<Road,List<GMLLane>> lanes = new HashMap<Road,List<GMLLane>>();
 		
 		long start = System.nanoTime();
 		gmlLanes.forEach(gmlLane->{
-			Optional<Road> roadOptional = getNearestRoad(gmlLane.geometry, env, 0.0003, true);
+			Optional<Road> roadOptional = getNearestRoad(gmlLane.geometry, env, nearestRoadBufferSize, true);
 			if (roadOptional.isPresent()) {
 				Road road = roadOptional.get();
 				gmlLane.connectedRoad = road;

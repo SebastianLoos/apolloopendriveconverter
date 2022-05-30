@@ -42,18 +42,16 @@ public class Converter {
 	
 	private static Log log = new Log();
 	
-	private String outputPath;
-	
-	public Converter(String outputPath) {
-		this.outputPath = outputPath;
-	}
-	
-	public void convertOSM(Environment env) {
+	/**
+	 * Converts a street network environment to an Apollo OpenDRIVE file.
+	 * @param env Environment to be converted.
+	 * @param outputPath Path to the output file.
+	 */
+	public static void convertOSM(Environment env, String outputPath) {
 		try {
 			OpenDRIVE openDriveRoot = new OpenDRIVE();
 			List<Object> rootElements = openDriveRoot.getLinkOrGeometryOrOutline();
 			env.roads.forEach(road->{
-				//log.log("Converting " + road.id);
 				Road odRoad = new Road();
 				Lanes odLanes = new Lanes();
 				Link odLink = new Link();
