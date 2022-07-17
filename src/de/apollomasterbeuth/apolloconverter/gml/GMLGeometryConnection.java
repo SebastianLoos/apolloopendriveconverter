@@ -1,9 +1,5 @@
 package de.apollomasterbeuth.apolloconverter.gml;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.IntStream;
 
 import org.locationtech.jts.geom.Coordinate;

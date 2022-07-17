@@ -6,17 +6,30 @@ import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 
+/**
+ * Represents a LineString in an GML environment.
+ * @author Hayuki
+ *
+ */
 public class GMLLineString extends LineString{
 	
 	/**
-	 * 
+	 * Randomly generated UID.
 	 */
 	private static final long serialVersionUID = 8356265379562065963L;
-
+	
+	/**
+	 * Initializes a new instance of the GMLLineString class.
+	 * @param points Points constructing the LineString.
+	 * @param factory JTS Geometry factory to use for generating the geometry.
+	 */
 	public GMLLineString(CoordinateSequence points, GeometryFactory factory) {
 		super(points, factory);
 	}
-
+	
+	/**
+	 * Gets the length of the LineString in meters.
+	 */
 	public double getLength() {
 		return calculateDistance(getStartPoint().getCoordinate(), getEndPoint().getCoordinate());
 	}
