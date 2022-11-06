@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 import de.uzl.itm.jaxb4osm.tools.WayElementFilter;
 
 import javax.xml.bind.annotation.XmlElement;

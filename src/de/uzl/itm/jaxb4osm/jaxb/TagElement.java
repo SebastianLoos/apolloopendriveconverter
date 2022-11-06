@@ -26,7 +26,7 @@ package de.uzl.itm.jaxb4osm.jaxb;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 
 /**
  * JAXB compliant class for the tag element in OSM files (from OpenStreetMap)

@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 
 import java.util.Iterator;
 import java.util.Map;

@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 
 /**
  * Abstract base class for unmarshalled XML elements from OSM files (node, way, relation) after unmarshalling resp.

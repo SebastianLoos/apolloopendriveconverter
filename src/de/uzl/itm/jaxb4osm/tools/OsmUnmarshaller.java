@@ -24,7 +24,7 @@
  */
 package de.uzl.itm.jaxb4osm.tools;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 import de.uzl.itm.jaxb4osm.jaxb.NodeElement;
 import de.uzl.itm.jaxb4osm.jaxb.OsmElement;
 

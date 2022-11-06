@@ -27,7 +27,7 @@ package de.uzl.itm.jaxb4osm.jaxb;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.adapters.XmlAdapter;

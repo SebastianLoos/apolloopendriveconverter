@@ -34,7 +34,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 
-import de.apollomasterbeuth.logger.Log;
+import de.apollomasterbht.logger.Log;
 import de.uzl.itm.jaxb4osm.jaxb.OsmElement;
 /**
  * This is a class to provide a static method to marshal OSM files.
