@@ -1,5 +1,5 @@
 # Apollo OpenDRIVE Converter
-This is a conversion tool written in Java for converting OSM and Berlin Road Inspection GML data into the Apollo OpenDRIVE format.
+This is a conversion tool written in Java for converting OSM and Berlin Road Inspection GML data into the Apollo OpenDRIVE format.  
 Compiled binaries can be found in the release section on the right.
 ## Compiling the source code
 If you are using one of compiled release binaries you can skip this section and continue with getting the data for the conversion.  
@@ -38,7 +38,7 @@ This is an example of a request for the "Bordstein" feature in a bounding box wi
   
 `https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_Bordstein?&VERSION=2.0.0&SERVICE=WFS&REQUEST=GetFeature&BBox=375183.00,5820910.04,377867.68,5818479.47&TYPENAMEs=s_Bordstein`
   
-The resulting file can the be saved via the browser.
+The resulting file can the be saved via the browser. Below is a snippet of the response to the request above:
   
 ![bridata](img/bri_data.png)
 
