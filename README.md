@@ -53,3 +53,6 @@ The tool needs to be run with Java version 8. This is an example of a command to
 `'C:\Program Files\Java\jdk1.8.0_211\bin\java.exe' -jar .\apolloconverter-0.1.0.jar INPUT.OSM OUTPUT.XODR INPUT1.GML`
   
 ![toolexecute](img/tool_execute.png)
+
+A set of demo files, containing one OSM file and two GML files are provided with the source code in the "demo" folder.  
+All three files contain data of the same area in Berlin.
