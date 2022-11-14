@@ -27,6 +27,10 @@ Here an area can be selected with the coordinates of the current view being the 
   
 ![osmexportstart](img/osm_startexport.png)
 
+The OSM format is derived by the XML standard. Here is an example of an OSM file downloaded from the official OSM website:
+
+![osmdata](img/osm_data.png)
+
 ### Berlin Road Inspection Data
 Data for the Berlin Road Inspection is publicly available on the official [FIS-Broker](https://fbinter.stadt-berlin.de/fb/index.jsp) of the government of Berlin. It is found under the category "Verkehr" and the application "Straßenbefahrung 2014".  
   
@@ -56,3 +60,6 @@ The tool needs to be run with Java version 8. This is an example of a command to
 
 A set of demo files, containing one OSM file and two GML files are provided with the source code in the "demo" folder.  
 All three files contain data of the same area in Berlin.
+- [OSM file](demo/osmfile.osm)
+- [GML road boundaries file](demo/bordsteine.xml)
+- [GML road markings file](demo/fahrbahnmarkierungen.xml)
