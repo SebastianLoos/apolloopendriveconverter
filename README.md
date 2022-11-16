@@ -1,6 +1,6 @@
 # Apollo OpenDRIVE Converter
 This is a conversion tool written in Java for converting OSM and Berlin Road Inspection GML data into the Apollo OpenDRIVE format.  
-[Apollo](https://github.com/ApolloAuto/apollo) is an open source autonomous driving platform using a derived version of the [OpenDRIVE format](https://www.asam.net/standards/detail/opendrive/).  
+[Apollo Auto](https://developer.apollo.auto/index.html) ([GitHub](https://github.com/ApolloAuto/apollo)) is an open source autonomous driving platform using a derived version of the [OpenDRIVE format](https://www.asam.net/standards/detail/opendrive/) developed by Baidu.  
 Compiled binaries can be found in the release section on the right.  
 The JOSM Apollo OpenDRIVE plugin can be found [here](https://github.com/SebastianLoos/apolloopendriveplugin)
 ## Compiling the source code
