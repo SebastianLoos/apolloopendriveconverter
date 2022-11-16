@@ -1,6 +1,8 @@
 # Apollo OpenDRIVE Converter
 This is a conversion tool written in Java for converting OSM and Berlin Road Inspection GML data into the Apollo OpenDRIVE format.  
-Compiled binaries can be found in the release section on the right.
+[Apollo](https://github.com/ApolloAuto/apollo) is an open source autonomous driving platform using a derived version of the [OpenDRIVE format](https://www.asam.net/standards/detail/opendrive/).  
+Compiled binaries can be found in the release section on the right.  
+The JOSM Apollo OpenDRIVE plugin can be found [here](https://github.com/SebastianLoos/apolloopendriveplugin)
 ## Compiling the source code
 If you are using one of compiled release binaries you can skip this section and continue with getting the data for the conversion.  
 The source code can either be loaded into an IDE or be compiled via command line. The project has the following dependencies:
@@ -78,3 +80,15 @@ The image below shows the default radius (red) between to lanes (gray).
 Similar to the buffer zone above, a different radius is used when determining which road a GML geometry should belong to. A higher radius will increase the pool of possible roads in the calculation, but will also increase the calculation time. It should therefore be calibrated as low as possible. For the demo data set a radius of 0.003 degrees, or about 4m has shown good results.  
 
 ![parameterradiusroad](img/parameter_roadradius.png)
+
+## Limitations of the converter
+The converter is currently limited to the first of three levels of HD maps, as it is only capable of constructing the basic connected road network and boundaries. This layer includes the logical road connections for planning algorithms in autonomous driving.
+  
+![hdmapslevels](img/hdmaplevels_liu.png)
+
+Work is currently in progress to lift the conversion process into the second level with inclusion of complete lane data. Current problems include wrong lane classification of geometries, especially when roads split.
+
+## Goal of the converter
+The end product of the converter is an complete drivable level 3 HD map with the official Apollo Auto demo file serving as an example. The demo "Sunnyvale" file can be found in the compiled Apollo Auto suite; below is a screenshot of a detailed intersection contained in the data.   
+  
+![sunnyvale](img/apollo_demodata.png)
