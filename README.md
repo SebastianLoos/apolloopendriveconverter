@@ -63,3 +63,18 @@ All three files contain data of the same area in Berlin.
 - [OSM file](demo/osmfile.osm)
 - [GML road boundaries file](demo/bordsteine.xml)
 - [GML road markings file](demo/fahrbahnmarkierungen.xml)
+
+
+## Variable parameters
+! Currently the parameters can not be changed via launch arguments. This is planned in a future update. !
+### GML data connection buffer zone radius
+For the process of combining adjoined elements in the GML data, a buffer zone is used on the endpoints of geometries to detect if other geometries are in close range. The size of this buffer zone can be changed to include elements further away if you have problems with geometries not connecting or different units of the coordinate system. It can also be lowered if the settings include too many unintended elements. The default value is calibrated to the EPDG 4326 and the lane size of the German road network. It is currently set at 0.00001 degrees, or about 70cm.  
+The image below shows the default radius (red) between to lanes (gray).  
+  
+![parameterradius](img/parameter_radius.png)
+
+### GML data referencing buffer zone radius
+
+Similar to the buffer zone above, a different radius is used when determining which road a GML geometry should belong to. A higher radius will increase the pool of possible roads in the calculation, but will also increase the calculation time. It should therefore be calibrated as low as possible. For the demo data set a radius of 0.003 degrees, or about 4m has shown good results.  
+
+![parameterradiusroad](img/parameter_roadradius.png)
