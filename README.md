@@ -86,7 +86,11 @@ The converter is currently limited to the first of three levels of HD maps, as i
   
 ![hdmapslevels](img/hdmaplevels_liu.png)
 
-Work is currently in progress to lift the conversion process into the second level with inclusion of complete lane data. Current problems include wrong lane classification of geometries, especially when roads split.
+Work is currently in progress to lift the conversion process into the second level with inclusion of complete lane data. Current problems include wrong lane classification of geometries, especially when roads split.  
+  
+The converter uses the Apollo OpenDRIVE format, which is a reduced version of the official [ASAM OpenDRIVE format](https://www.asam.net/standards/detail/opendrive/). It is lacking some of the general traffic elements such as those connected to railroad infrastructure and is generally reduced in detail on road information, lanes and geometry types:  
+  
+![diff](img/diff.png)
 
 ## Goal of the converter
 The end product of the converter is an complete drivable level 3 HD map with the official Apollo Auto demo file serving as an example. The demo "Sunnyvale" file can be found in the compiled Apollo Auto suite; below is a screenshot of a detailed intersection contained in the data.   
