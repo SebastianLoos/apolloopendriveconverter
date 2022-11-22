@@ -1,5 +1,5 @@
 # Apollo OpenDRIVE Converter
-This is a conversion tool written in Java for converting OSM and Berlin Road Inspection GML data into the Apollo OpenDRIVE format.  
+This is a conversion tool written in Java for converting OSM and [Berlin Road Inspection GML]() (Berliner Straßenbefahrung) data into the Apollo OpenDRIVE format.  
 [Apollo Auto](https://developer.apollo.auto/index.html) ([GitHub](https://github.com/ApolloAuto/apollo)) is an open source autonomous driving platform using a derived version of the [OpenDRIVE format](https://www.asam.net/standards/detail/opendrive/) developed by Baidu.  
 Compiled binaries can be found in the release section on the right.  
 The JOSM Apollo OpenDRIVE plugin can be found [here](https://github.com/SebastianLoos/apolloopendriveplugin)
@@ -35,10 +35,12 @@ The OSM format is derived by the XML standard. Here is an example of an OSM file
 
 ### Berlin Road Inspection Data
 Data for the Berlin Road Inspection is publicly available on the official [FIS-Broker](https://fbinter.stadt-berlin.de/fb/index.jsp) of the government of Berlin. It is found under the category "Verkehr" and the application "Straßenbefahrung 2014".  
+A detailed description of all available data can be found [here (PDF)](https://fbinter.stadt-berlin.de/fb_daten/beschreibung/datenformatbeschreibung/Datenformatbeschreibung_Stra%C3%9Fenbefahrung_2014.pdf).  
   
 ![brifisbroker](img/bri_fisbroker.png)
 
-From there, various services providing data on the different feature layers can be accessed. This includes a WMS for image data and WFS services for each feature of the data set. Currently, only road markings ("Fahrbahnmarkierung Linie") and curbstone ("Bordstein") features are supported by the conversion tool.  
+From there, various services providing data on the different feature layers can be accessed. This includes a WMS for image data and WFS services for each feature of the data set. Currently, only road markings (["Fahrbahnmarkierung Linie"](https://daten.berlin.de/datensaetze/stra%C3%9Fenbefahrung-2014-fahrbahnmarkierung-linie-wfs)) and curbstone (["Bordstein"](https://daten.berlin.de/datensaetze/stra%C3%9Fenbefahrung-2014-bordstein-wfs)) features are supported by the conversion tool.  
+An overview of the available WFS can also be found [here](https://daten.berlin.de/tags/stra%C3%9Fenbefahrung).  
 To download the respective feature in a given area, it has to be directly requested from the API via an HTTP request. This can be done directly in the browser.  
 This is an example of a request for the "Bordstein" feature in a bounding box with the corners at the coordinates 375183.00,5820910.04 and 377867.68,5818479.47:  
   
@@ -63,8 +65,8 @@ The tool needs to be run with Java version 8. This is an example of a command to
 A set of demo files, containing one OSM file and two GML files are provided with the source code in the "demo" folder.  
 All three files contain data of the same area in Berlin.
 - [OSM file](demo/osmfile.osm)
-- [GML road boundaries file](demo/bordsteine.xml)
-- [GML road markings file](demo/fahrbahnmarkierungen.xml)
+- [GML road boundaries file](demo/curbstones.xml)
+- [GML road markings file](demo/roadmarkings.xml)
 
 
 ## Variable parameters
