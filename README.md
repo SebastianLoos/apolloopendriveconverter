@@ -67,7 +67,10 @@ All three files contain data of the same area in Berlin.
 - [OSM file](demo/osmfile.osm)
 - [GML road boundaries file](demo/curbstones.xml)
 - [GML road markings file](demo/roadmarkings.xml)
-
+  
+Example of the demo GML data:  
+  
+![gmldata](img/gml_raw.png)
 
 ## Variable parameters
 ! Currently the parameters can not be changed via launch arguments. This is planned in a future update. !
