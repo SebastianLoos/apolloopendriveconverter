@@ -55,7 +55,7 @@ The conversion tool can be started via a command line. It takes the following pa
 - File path to the .osm file
 - File path to the output file
 - (optional) File paths to the .gml files
-
+  
 The tool needs to be run with Java version 8. This is an example of a command to convert one OSM and one GML file with the Java executable manually selected:  
   
 `'C:\Program Files\Java\jdk1.8.0_211\bin\java.exe' -jar .\apolloconverter-0.1.0.jar INPUT.OSM OUTPUT.XODR INPUT1.GML`
@@ -101,3 +101,31 @@ The converter uses the Apollo OpenDRIVE format, which is a reduced version of th
 The end product of the converter is an complete drivable level 3 HD map with the official Apollo Auto demo file serving as an example. The demo "Sunnyvale" file can be found in the compiled Apollo Auto suite; below is a screenshot of a detailed intersection contained in the data.   
   
 ![sunnyvale](img/apollo_demodata.png)
+
+This HD map data is used by the Apollo Auto platform as one of many data sources in the different [modules](https://github.com/ApolloAuto/apollo#architecture) of the architecture. In combination with pre-recorded sensor data a "test-drive" of a specific region can be created to test and demonstrate the platform in that area. Examples of these data-sets can be found on the Apollo developer website and are described below.  
+  
+## Additional demo files (test drives)
+### Daoxiang Lake
+The [Daoxiang Lake](https://developer.apollo.auto/daoxianglake.html) demo data set contains a test drive with data from a range of sensors.  
+  
+- Point clouds from a Velodyne HDL-64E LiDAR
+- Image data from cameras
+- IMU data from gyro and accelerometer
+- Pose data from the vehicle describing its current position and orientation
+- Parameter data of the sensors
+  
+![daoxiang](https://developer.apollo.auto/images/game/assets/image-12_3fcb13b.png)
+
+This data set is not accompanied by an HD map.
+
+### South Bay
+The [South Bay](https://developer.apollo.auto/southbay.html) data contains several locations in southern California. Each location has data from sever of the following sources:
+  
+- LiDAR scans and point clouds
+- Pose data from the vehicle
+- GNSS/IMU estimated poses
+- Image data from cameras
+  
+![southbay](https://developer.apollo.auto/images/game/assets/image-1_a54e3cd.png)
+  
+At least one data set (SunnvaleBigloop) contains HD map data. This data is also compatible with the [Apollo OpenDRIVE JOSM plugin](https://github.com/SebastianLoos/apolloopendriveplugin).
